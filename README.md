@@ -11,7 +11,7 @@ R CMD INSTALL nnTensor
 
 References
 ======
-- Non-negative Matrix Factorization (NMF) : [Nonnegative Matrix and Tensor Factorizations, Andrzej CICHOCK, et. al., 2009](https://pdfs.semanticscholar.org/94cc/6daad548a03c6edb0351d686c2d4aa364634.pdf)
+- Non-negative Matrix Factorization (NMF) : [Nonnegative Matrix and Tensor Factorizations, Andrzej CICHOCK, et. al., 2009](https://pdfs.semanticscholar.org/94cc/6daad548a03c6edb0351d686c2d4aa364634.pdf), [A Study on Efficient Algorithms for Nonnegative Matrix/Tensor Factorization, Keigo Kimura, 2017](https://eprints.lib.hokudai.ac.jp/dspace/bitstream/2115/65379/1/Keigo_Kimura.pdf)
 - Non-negative CP Decomposition (NTF)
    - α-Divergence (KL, Pearson, Hellinger, Neyman) / β-Divergence (KL, Frobenius, IS) : [Non-negative Tensor Factorization using Alpha and Beta Divergence, Andrzej CICHOCKI et. al., 2007](http://mlg.postech.ac.kr/static/publications/inter_conf/2007/icassp07_cichocki.pdf), [TensorKPD.R (gist of mathieubray)](https://gist.github.com/mathieubray/d83ce9c13fcb60f723f957c13ad85ac5)
    - Fast HALS : [Multi-way Nonnegative Tensor Factorization Using Fast Hierarchical Alternating Least Squares Algorithm (HALS), Anh Huy PHAN et. al., 2008](http://www.ieice.org/proceedings/NOLTA2008/articles/A1L-D3-Phan-2045.pdf)
