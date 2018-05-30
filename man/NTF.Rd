@@ -70,7 +70,7 @@ Andrzej CICHOCKI et. al., (2008). Fast Local Algorithms for Large Scale Nonnegat
 }
 \examples{
 tensordata <- toyModel(model = "CP")
-out <- NTF(tensordata, rank=4, algorithm="Beta-HALS", num.iter=2)
+out <- NTF(tensordata, rank=3, algorithm="Beta-HALS", num.iter=2)
 }
 
 \keyword{methods}
