@@ -37,7 +37,7 @@ Tensor object, which is defined as S4 class of rTensor package.
 }
 \examples{
 tensordata <- toyModel(model = "CP")
-out <- NTF(tensordata, rank=4, algorithm="Beta-HALS", num.iter=5)
+out <- NTF(tensordata, rank=4, algorithm="Beta-HALS", num.iter=2)
 rec <- recTensor(out$S, out$A)
 }
 

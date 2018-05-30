@@ -72,13 +72,7 @@ Anh Hyu Phan et. al. (2011). Extended HALS algorithm for nonnegative Tucker deco
 }
 \examples{
 tensordata <- toyModel(model = "Tucker")
-
-out <- NTD(tensordata, rank=c(5,5,5), algorithm="KL", num.iter=5)
-
-tmp <- tempdir()
-png(filename=paste0(tmp, "/NTD.png"))
-plotTensor3D(recTensor(out$S, out$A))
-dev.off()
+out <- NTD(tensordata, rank=c(5,5,5), algorithm="KL", num.iter=2)
 }
 
 \keyword{methods}
