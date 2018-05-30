@@ -69,13 +69,13 @@ Andrzej CICHOCKI et. al., (2008). Fast Local Algorithms for Large Scale Nonnegat
 \code{\link{plotTensor3D}}
 }
 \examples{
-tensordata1 <- toyModel(model = "CP")
+tensordata <- toyModel(model = "CP")
 
-out2 <- NTF(tensordata1, rank=4, algorithm="Beta-HALS", num.iter=10)
+out <- NTF(tensordata, rank=4, algorithm="Beta-HALS", num.iter=5)
 
 tmp <- tempdir()
 png(filename=paste0(tmp, "/NTF.png"))
-plotTensor3D(recTensor(out2$S, out2$A))
+plotTensor3D(recTensor(out$S, out$A))
 dev.off()
 }
 

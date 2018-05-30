@@ -73,14 +73,13 @@ Keigo Kimura, (2017). A Study on Efficient Algorithms for Nonnegative Matrix/Ten
 
 \examples{
 library("fields")
-
 matdata <- toyModel(model = "NMF")
 
-out1 <- NMF(matdata, J=5, algorithm="Frobenius", num.iter=10)
+out <- NMF(matdata, J=5, algorithm="Frobenius", num.iter=5)
 
 tmp <- tempdir()
 png(filename=paste0(tmp, "/NMF.png"))
-image.plot(matdata)
+image.plot(out$U %*% t(out$V))
 dev.off()
 }
 
