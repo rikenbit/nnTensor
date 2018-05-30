@@ -11,7 +11,9 @@ NMF decompose the matrix to two low-dimensional factor matices.
 This function is also used as initialization step of tensor decomposition (see also NTF and NTD).
 }
 \usage{
-NMF(X, J = 3, algorithm = "Frobenius", Alpha = 1, Beta = 2, eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04, num.iter = 100, viz = FALSE, figdir = ".", verbose = FALSE)
+NMF(X, J = 3, algorithm = "Frobenius", Alpha = 1,
+  Beta = 2, eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10,
+  tol = 1e-04, num.iter = 100, viz = FALSE, figdir = ".", verbose = FALSE)
 }
 
 \arguments{
@@ -76,9 +78,9 @@ matdata <- toyModel(model = "NMF")
 tensordata1 <- toyModel(model = "CP")
 tensordata2 <- toyModel(model = "Tucker")
 
-out1 <- NMF(matdata, J=5, algorithm="Frobenius")
-out2 <- NTF(tensordata1, rank=4, algorithm="Beta-HALS")
-out3 <- NTD(tensordata2, rank=c(5,5,5), algorithm="KL")
+out1 <- NMF(matdata, J=5, algorithm="Frobenius", num.iter=10)
+out2 <- NTF(tensordata1, rank=4, algorithm="Beta-HALS", num.iter=10)
+out3 <- NTD(tensordata2, rank=c(5,5,5), algorithm="KL", num.iter=10)
 
 tmp <- tempdir()
 

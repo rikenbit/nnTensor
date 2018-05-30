@@ -1,6 +1,6 @@
 Package: nnTensor
 Type: Package
-Title: An R package for Non-negative Tensor Decomposition
+Title: An R Package for Non-Negative Tensor Decomposition
 Version: 0.99.0
 Date: 2018-05-29
 Author: Koki Tsuyuzaki, Manabu Ishii, Itoshi Nikaido
@@ -8,5 +8,5 @@ Maintainer: Koki Tsuyuzaki <k.t.the-answer@hotmail.co.jp>
 Suggests: testthat
 Depends: R (>= 3.4.0), fields, rTensor, plot3D, tagcloud
 Imports: methods
-Description: This package provides some functions for performing non-negative matrix factorization (NMF), non-negative CP decomposition (NTF), non-negative Tucker decomposition (NTD), and generating toy model data.
+Description: Some functions for performing non-negative matrix factorization, non-negative CP decomposition, non-negative Tucker decomposition, and generating toy model data.
 License: Artistic-2.0
