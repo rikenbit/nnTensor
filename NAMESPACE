@@ -1,0 +1,17 @@
+import(fields)
+import(rTensor)
+import(plot3D)
+import(tagcloud)
+
+importFrom("grDevices", "dev.off", "png")
+importFrom("methods", "is")
+importFrom("stats", "runif", "sd")
+
+export(
+    toyModel,
+    NMF,
+    plotTensor3D,
+    recTensor,
+    NTD,
+    NTF
+	)

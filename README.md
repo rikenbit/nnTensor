@@ -23,7 +23,7 @@ References
 - Non-negative Tucker Decomposition (NTD)
    - KL, Frobenius : [Nonnegative Tucker Decomposition, Yong-Deok Kim et. al., 2007](https://pdfs.semanticscholar.org/f388/99be8ebd8b9aa7029b2b4f187dac4b04d816.pdf)
    - α-Divergence (KL, Pearson, Hellinger, Neyman) / β-Divergence (KL, Frobenius, IS) : [Nonneegative Tucker Decomposition With Alpha-Divergence, Yong-Deok Kim et. al., 2008](https://pdfs.semanticscholar.org/f01b/7354619f053863048217c58cc517def86aeb.pdf), [Fast and efficient algorithms for nonnegative Tucker decomposition, Anh Huy Phan, 2008](https://link.springer.com/chapter/10.1007/978-3-540-87734-9_88)
-   - Fast HALS : [Extended HALS algorithm for nonnegative Tucker decomposition and its applications for multiway analysis and classification Author links open overlay panel, Anh Hyu Phan et. al., 2011](https://www.sciencedirect.com/science/article/pii/S0925231211000427)
+   - Fast HALS : [Extended HALS algorithm for nonnegative Tucker decomposition and its applications for multiway analysis and classification, Anh Hyu Phan et. al., 2011](https://www.sciencedirect.com/science/article/pii/S0925231211000427)
 
 ## License
 Copyright (c) 2018 Koki Tsuyuzaki and Laboratory for Bioinformatics Research, RIKEN Center for Biosystems Dynamics Reseach
