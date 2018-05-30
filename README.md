@@ -31,4 +31,5 @@ Released under the [Artistic License 2.0](http://www.perlfoundation.org/artistic
 
 ## Authors
 - Koki Tsuyuzaki
+- Manabu Ishii
 - Itoshi Nikaido
