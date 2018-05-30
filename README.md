@@ -5,8 +5,12 @@ Installation
 ======
 ~~~~
 git clone https://github.com/rikenbit/nnTensor/
-cd nnTensor
 R CMD INSTALL nnTensor
+~~~~
+or type the code below in the R console window
+~~~~
+library(devtools)
+devtools::install_github("rikenbit/nnTensor")
 ~~~~
 
 References
