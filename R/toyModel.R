@@ -28,5 +28,8 @@ function (model = "CP")
         X[25:35, 200:220] <- X[25:35, 200:220] * 150
         X[51:100, 220:300] <- X[51:100, 220:300] * 150
     }
+    else {
+        stop("Please specify model parameter as CP, Tucker, or NMF")
+    }
     X
 }

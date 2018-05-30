@@ -75,9 +75,9 @@ matdata <- toyModel(model = "NMF")
 tensordata1 <- toyModel(model = "CP")
 tensordata2 <- toyModel(model = "Tucker")
 
-out1 <- NMF(matdata, J=5, algorithm="Frobenius", num.iter=10)
-out2 <- NTF(tensordata1, rank=4, algorithm="Beta-HALS", num.iter=10)
-out3 <- NTD(tensordata2, rank=c(5,5,5), algorithm="KL", num.iter=10)
+out1 <- NMF(matdata, J=5, algorithm="Frobenius")
+out2 <- NTF(tensordata1, rank=4, algorithm="Beta-HALS")
+out3 <- NTD(tensordata2, rank=c(5,5,5), algorithm="KL")
 
 tmp <- tempdir()
 
