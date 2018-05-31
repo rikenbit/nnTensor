@@ -72,7 +72,7 @@ Anh Hyu Phan et. al. (2011). Extended HALS algorithm for nonnegative Tucker deco
 }
 \examples{
 tensordata <- toyModel(model = "Tucker")
-out <- NTD(tensordata, rank=c(2,2,2), algorithm="Frobenius", num.iter=2)
+out <- NTD(tensordata, rank=c(2,2,2), algorithm="Frobenius", init="Random", num.iter=2)
 }
 
 \keyword{methods}
