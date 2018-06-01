@@ -1,3 +1,9 @@
-VERSION 0.99.0
+VERSION 0.99.1
+------------------------
+   o Revised
+   o DESCRIPTION is fixed
+   o No intermediate files are saved, unless viz=FALSE (Default) is changed as viz=TRUE
+
+   VERSION 0.99.0
 ------------------------
    o Package released
