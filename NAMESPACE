@@ -5,7 +5,7 @@ import(tagcloud)
 
 importFrom("grDevices", "dev.off", "png")
 importFrom("methods", "is")
-importFrom("stats", "runif", "sd")
+importFrom("stats", "runif", "sd", "rpois")
 
 export(
     toyModel,

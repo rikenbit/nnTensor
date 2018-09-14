@@ -1,3 +1,8 @@
+VERSION 0.99.2
+------------------------
+   o Reconstuction Error and relative change of the error are reterned by NMF, NTF, and NTD
+   o toyModel returns integar random tensor
+
 VERSION 0.99.1
 ------------------------
    o Revised

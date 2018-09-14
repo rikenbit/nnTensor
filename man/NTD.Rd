@@ -54,6 +54,8 @@ If verbose == TRUE, Error change rate is generated in console windos.
 \value{
   S : Tensor object, which is defined as S4 class of rTensor package.
   A : A list containing three factor matrices.
+  RecError : The reconstruction error between data tensor and reconstructed tensor from S and A
+  RelChange : The relative change of the error
 }
 
 \references{

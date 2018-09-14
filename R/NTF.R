@@ -1,7 +1,7 @@
 NTF <-
-function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1, 
-    Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE, figdir = ".", 
-    verbose = FALSE) 
+function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
+    Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE, figdir = ".",
+    verbose = FALSE)
 {
     if (verbose) {
         cat("Initialization step is running...\n")
@@ -16,7 +16,7 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
             res.nmf <- NMF(Xn, J = rank, algorithm = "KL")
             A[[n]] <- t(res.nmf$V)
             orderA <- order(sapply(1:rank, function(x) {
-                norm(as.matrix(res.nmf$V[, x], "F")) * norm(as.matrix(res.nmf$U[, 
+                norm(as.matrix(res.nmf$V[, x], "F")) * norm(as.matrix(res.nmf$U[,
                   x]), "F")
             }), decreasing = TRUE)
         }
@@ -29,7 +29,7 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
             }), decreasing = TRUE)
         }
         else if (init == "Random") {
-            A[[n]] <- matrix(runif(rank * dim(X)[n]), nrow = rank, 
+            A[[n]] <- matrix(runif(rank * dim(X)[n]), nrow = rank,
                 ncol = dim(X)[n])
             orderA <- order(apply(A[[n]], 1, function(x) {
                 norm(as.matrix(x), "F")
@@ -43,10 +43,13 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
         }
     }
     iter <- 1
+    RecError = c() # Added in 2018.9.14
+    RelChange = c() # Added in 2018.9.14
     X_bar <- recTensor(rep(1, length = rank), A)
-    Error <- .recError(X, X_bar)
+    RecError[1] <- .recError(X, X_bar)
+    RelChange[1] <- thr * 10
     if (algorithm == "HALS") {
-        T1 <- (A[[1]] %*% t(A[[1]])) * (A[[2]] %*% t(A[[2]])) * 
+        T1 <- (A[[1]] %*% t(A[[1]])) * (A[[2]] %*% t(A[[2]])) *
             (A[[3]] %*% t(A[[3]]))
     }
     if (algorithm == "Alpha-HALS" || algorithm == "Beta-HALS") {
@@ -80,7 +83,8 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    while ((Error > thr) && (iter <= num.iter)) {
+    while ((RecError[iter] > thr) && (iter <= num.iter)) {
+        # Before Update U, V
         X_bar <- recTensor(rep(1, length = rank), A)
         pre_Error <- .recError(X, X_bar)
         if (algorithm == "Alpha") {
@@ -89,7 +93,7 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
                 tmp1 <- A[[setdiff(1:rank, n)[1]]]
                 tmp2 <- A[[setdiff(1:rank, n)[2]]]
                 A_nonn <- khatri_rao(t(tmp1), t(tmp2))
-                A[[n]] <- A[[n]] * (t(A_nonn) %*% (cs_unfold(X, 
+                A[[n]] <- A[[n]] * (t(A_nonn) %*% (cs_unfold(X,
                   m = n)@data/cs_unfold(X_bar, m = n)@data)^Alpha)^(1/Alpha)
                 if (n != N) {
                   A[[n]] <- t(apply(A[[n]], 1, function(x) {
@@ -104,9 +108,9 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
                 tmp1 <- A[[setdiff(1:rank, n)[1]]]
                 tmp2 <- A[[setdiff(1:rank, n)[2]]]
                 A_nonn <- khatri_rao(t(tmp1), t(tmp2))
-                numer <- t(A_nonn) %*% (cs_unfold(X, m = n)@data/cs_unfold(X_bar^(Beta - 
+                numer <- t(A_nonn) %*% (cs_unfold(X, m = n)@data/cs_unfold(X_bar^(Beta -
                   1), m = n)@data)
-                denom <- t(A_nonn) %*% cs_unfold(X_bar^(Beta), 
+                denom <- t(A_nonn) %*% cs_unfold(X_bar^(Beta),
                   m = n)@data
                 A[[n]] <- A[[n]] * numer/denom
                 if (n != N) {
@@ -128,11 +132,11 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
                 T2 = t(cs_unfold(X, m = n)@data) %*% A_nonn
                 T3 = T1/(A[[n]] %*% t(A[[n]]))
                 for (r in 1:rank) {
-                  A[[n]][r, ] = .positive(gamma[r] * A[[n]][r, 
-                    ] + T2[, r] - as.vector(t(A[[n]]) %*% T3[, 
+                  A[[n]][r, ] = .positive(gamma[r] * A[[n]][r,
+                    ] + T2[, r] - as.vector(t(A[[n]]) %*% T3[,
                     r]))^2
                   if (n != N) {
-                    A[[n]][r, ] <- A[[n]][r, ]/norm(as.matrix(A[[n]][r, 
+                    A[[n]][r, ] <- A[[n]][r, ]/norm(as.matrix(A[[n]][r,
                       ]), "F")
                   }
                 }
@@ -146,7 +150,7 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
                 for (n in 1:N) {
                   if (Alpha == 0) {
                     tmp_Xr <- .positive(Xr)
-                    tmp_Xr@data[, , ] <- log(tmp_Xr@data[, , 
+                    tmp_Xr@data[, , ] <- log(tmp_Xr@data[, ,
                       ])
                     numer <- tmp_Xr
                   }
@@ -156,14 +160,14 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
                   denom <- 0
                   non_n <- setdiff(1:N, n)
                   for (m in non_n) {
-                    numer <- ttm(numer, t(as.matrix(A[[m]][r, 
+                    numer <- ttm(numer, t(as.matrix(A[[m]][r,
                       ])), m = m)
                     if (Alpha == 0) {
-                      denom <- denom + as.numeric(t(A[[m]][r, 
+                      denom <- denom + as.numeric(t(A[[m]][r,
                         ]) %*% log(A[[m]][r, ]))
                     }
                     else {
-                      denom <- denom + as.numeric(t(A[[m]][r, 
+                      denom <- denom + as.numeric(t(A[[m]][r,
                         ]) %*% A[[m]][r, ]^Alpha)
                     }
                   }
@@ -175,7 +179,7 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
                     A[[n]][r, ] <- .positive(numer/denom)^(1/Alpha)
                   }
                   if (n != N) {
-                    A[[n]][r, ] <- A[[n]][r, ]/norm(as.matrix(A[[n]][r, 
+                    A[[n]][r, ] <- A[[n]][r, ]/norm(as.matrix(A[[n]][r,
                       ]), "F")
                   }
                 }
@@ -191,20 +195,20 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
                   non_n <- setdiff(1:N, n)
                   tmp_u <- Xr
                   for (m in non_n) {
-                    tmp_u <- ttm(tmp_u, t(as.matrix((A[[m]][r, 
+                    tmp_u <- ttm(tmp_u, t(as.matrix((A[[m]][r,
                       ])))^Beta, m = m)
                   }
                   A[[n]][r, ] <- .positive(as.vector(tmp_u@data[]))
-                  A[[n]][r, ] <- A[[n]][r, ]/norm(as.matrix(A[[n]][r, 
+                  A[[n]][r, ] <- A[[n]][r, ]/norm(as.matrix(A[[n]][r,
                     ]), "F")
                 }
                 non_N <- setdiff(1:N, N)
                 numer <- Xr
                 denom <- 0
                 for (m in non_N) {
-                  numer <- ttm(numer, t(as.matrix(A[[m]][r, ])), 
+                  numer <- ttm(numer, t(as.matrix(A[[m]][r, ])),
                     m = m)
-                  denom <- denom + as.numeric(t(A[[m]][r, ])^Beta %*% 
+                  denom <- denom + as.numeric(t(A[[m]][r, ])^Beta %*%
                     A[[m]][r, ])
                 }
                 A[[N]][r, ] <- .positive(as.vector(numer@data[]/denom))
@@ -220,27 +224,33 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
                 stop("Inf or NaN is generated!\n")
             }
         }
+        # After Update U, V
+        iter <- iter + 1
         X_bar <- recTensor(rep(1, length = rank), A)
+        RecError[iter] <- .recError(X, X_bar)
+        RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
         if (viz) {
             png(filename = paste0(figdir, "/", iter, ".png"))
             plotTensor3D(X_bar)
             dev.off()
         }
-        Error <- .recError(X, X_bar)
-        Error <- abs(pre_Error - Error)/Error
-        if (is.nan(Error)) {
+        if (verbose) {
+            cat(paste0(iter-1, " / ", num.iter, " |Previous Error - Error| / Error = ",
+                RelChange[iter], "\n"))
+        }
+        if (is.nan(RelChange[iter])) {
             stop("NaN is generated. Please run again or change the parameters.\n")
         }
-        if (verbose) {
-            cat(paste0(iter, " / ", num.iter, " |Previous Error - Error| / Error = ", 
-                Error, "\n"))
-        }
-        iter <- iter + 1
     }
     if (viz) {
         png(filename = paste0(figdir, "/finish.png"))
         plotTensor3D(X_bar)
         dev.off()
+        png(filename = paste0(figdir, "/original.png"))
+        plotTensor3D(X)
+        dev.off()
     }
-    return(list(S = .diag(X_bar), A = A))
+    names(RecError) <- c("offset", 1:(iter-1))
+    names(RelChange) <- c("offset", 1:(iter-1))
+    return(list(S = .diag(X_bar), A = A, RecError = RecError, RelChange = RelChange))
 }

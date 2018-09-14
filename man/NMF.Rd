@@ -61,6 +61,8 @@ If verbose == TRUE, Error change rate is generated in console windos.
 \value{
    U : A matrix which has N-rows and J-columns (J < N, M).
    V : A matrix which has M-rows and J-columns (J < N, M).
+   RecError : The reconstruction error between data tensor and reconstructed tensor from U and V
+   RelChange : The relative change of the error
 }
 
 
