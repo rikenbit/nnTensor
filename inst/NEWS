@@ -1,3 +1,16 @@
+VERSION 0.99.5
+------------------------
+   o modes parameter is added in NTF (NTD1 and NTD2 model)
+   o Convergence is judged by relative error
+
+VERSION 0.99.4
+------------------------
+   o set.seeds argument is added in toyModel
+
+VERSION 0.99.3
+------------------------
+   o Date fields in DESCRIPTION
+
 VERSION 0.99.2
 ------------------------
    o Reconstuction Error and relative change of the error are reterned by NMF, NTF, and NTD

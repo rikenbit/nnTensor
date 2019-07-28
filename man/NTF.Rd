@@ -12,7 +12,7 @@ NTF decompose the tensor to the diagonal core tensor (S) and low-dimensional fac
 \usage{
 NTF(X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
   Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE,
-  figdir = ".", verbose = FALSE)
+  figdir = NULL, verbose = FALSE)
 }
 
 \arguments{
@@ -44,7 +44,7 @@ The number of interation step (Default: 100).
 If viz == TRUE, internal reconstructed tensor can be visualized.
 }
   \item{figdir}{
-the directory for saving the figure, when viz == TRUE.
+the directory for saving the figure, when viz == TRUE (Default: NULL).
 }
   \item{verbose}{
 If verbose == TRUE, Error change rate is generated in console windos.

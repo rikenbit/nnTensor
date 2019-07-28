@@ -1,8 +1,6 @@
-NTF <-
-function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
-    Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE, figdir = ".",
-    verbose = FALSE)
-{
+NTF <- function(X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
+    Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE, figdir = NULL,
+    verbose = FALSE){
     if (verbose) {
         cat("Initialization step is running...\n")
     }
@@ -83,7 +81,7 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    while ((RecError[iter] > thr) && (iter <= num.iter)) {
+    while ((RelChange[iter] > thr) && (iter <= num.iter)) {
         # Before Update U, V
         X_bar <- recTensor(rep(1, length = rank), A)
         pre_Error <- .recError(X, X_bar)
@@ -229,10 +227,13 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
         X_bar <- recTensor(rep(1, length = rank), A)
         RecError[iter] <- .recError(X, X_bar)
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
-        if (viz) {
+        if (viz && !is.null(figdir)) {
             png(filename = paste0(figdir, "/", iter, ".png"))
             plotTensor3D(X_bar)
             dev.off()
+        }
+        if (viz && is.null(figdir)) {
+            plotTensor3D(X_bar)
         }
         if (verbose) {
             cat(paste0(iter-1, " / ", num.iter, " |Previous Error - Error| / Error = ",
@@ -242,13 +243,16 @@ function (X, rank = 3, algorithm = "KL", init = "NMF", Alpha = 1,
             stop("NaN is generated. Please run again or change the parameters.\n")
         }
     }
-    if (viz) {
+    if (viz && !is.null(figdir)) {
         png(filename = paste0(figdir, "/finish.png"))
         plotTensor3D(X_bar)
         dev.off()
         png(filename = paste0(figdir, "/original.png"))
         plotTensor3D(X)
         dev.off()
+    }
+    if (viz && is.null(figdir)) {
+        plotTensor3D(X_bar)
     }
     names(RecError) <- c("offset", 1:(iter-1))
     names(RelChange) <- c("offset", 1:(iter-1))

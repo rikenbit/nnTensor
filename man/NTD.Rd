@@ -10,9 +10,9 @@ The input data is assumed to be non-negative tensor.
 NTD decompose the tensor to the dense core tensor (S) and low-dimensional factor matices (A).
 }
 \usage{
-NTD(X, rank = c(3, 3, 3), algorithm = "KL", init = "NMF", Alpha = 1,
+NTD(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF", Alpha = 1,
   Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE,
-  figdir = ".", verbose = FALSE)
+  figdir = NULL, verbose = FALSE)
 }
 
 \arguments{
@@ -21,6 +21,9 @@ The input tensor which has I1, I2, and I3 dimensions.
 }
   \item{rank}{
 The number of low-dimension in each mode (J1, J2, J3, J1<I1, J2<I2, J3 < I3) (Default: c(3,3,3)).
+}
+  \item{modes}{
+The vector of the modes on whih to perform the decomposition (Default: 1:3 <all modes>).
 }
   \item{algorithm}{
 NTD algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha", and "Beta" are available (Default: "Frobenius").
@@ -44,7 +47,7 @@ The number of interation step (Default: 100).
 If viz == TRUE, internal reconstructed tensor can be visualized.
 }
   \item{figdir}{
-the directory for saving the figure, when viz == TRUE.
+the directory for saving the figure, when viz == TRUE (Default: NULL).
 }
   \item{verbose}{
 If verbose == TRUE, Error change rate is generated in console windos.

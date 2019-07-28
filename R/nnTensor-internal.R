@@ -1,6 +1,4 @@
-.recError <-
-function (X = NULL, X_bar = NULL) 
-{
+.recError <- function (X = NULL, X_bar = NULL){
     if (is(X)[1] == "matrix" && is(X_bar)[1] == "matrix") {
         v <- as.vector(X_bar - X)
     }
@@ -9,9 +7,8 @@ function (X = NULL, X_bar = NULL)
     }
     sqrt(sum(v * v))
 }
-.positive <-
-function (X, thr = 1e-10) 
-{
+
+.positive <- function(X, thr = 1e-10){
     if (is(X)[1] == "matrix") {
         X[which(X < thr)] <- thr
     }
@@ -26,26 +23,23 @@ function (X, thr = 1e-10)
     }
     X
 }
-.recMatrix <-
-function (U = NULL, V = NULL) 
-{
+
+.recMatrix <- function(U = NULL, V = NULL){
     if (is(U)[1] != "matrix" || is(V)[1] != "matrix") {
         stop("Please specify the appropriate U and V\n")
     }
     return(U %*% t(V))
 }
-.argmaxj <-
-function (D) 
-{
+
+.argmaxj <- function(D){
     colmax <- apply(D, 2, max)
     which(colmax == max(colmax))
 }
-.doiter <-
-function (U, V, X, tol = 1e-04, J) 
-{
+
+.doiter <- function(U, V, X, tol = 1e-04, J){
     Unew <- matrix(0, nrow = nrow(X), ncol = J)
     G <- U %*% t(V) %*% V - X %*% V
-    VV <- matrix(1, nrow = nrow(X), ncol = 1) %*% diag(t(V) %*% 
+    VV <- matrix(1, nrow = nrow(X), ncol = 1) %*% diag(t(V) %*%
         V)
     S <- .positive(U - G/VV, 0) - U
     D <- -G * S - (VV * S * S)/2
@@ -57,9 +51,9 @@ function (U, V, X, tol = 1e-04, J)
             s <- S[i, qi]
             Unew[i, qi] <- Unew[i, qi] + s
             G[i, ] <- G[i, ] + s * VV[qi, ]
-            S[i, ] <- .positive(U[i, ] - (G[i, ]/VV[1, ]), 0) - 
+            S[i, ] <- .positive(U[i, ] - (G[i, ]/VV[1, ]), 0) -
                 U[i, ]
-            D[i, ] <- -G[i, ] * S[i, ] - (VV[1, ] * S[i, ] * 
+            D[i, ] <- -G[i, ] * S[i, ] - (VV[1, ] * S[i, ] *
                 S[i, ])/2
             qi <- .argmaxj(D)[1]
             iter2 <- iter2 + 1
@@ -67,9 +61,8 @@ function (U, V, X, tol = 1e-04, J)
     }
     Unew
 }
-.pseudocount <-
-function (X, pseudocount = 1e-10) 
-{
+
+.pseudocount <- function(X, pseudocount = 1e-10){
     d <- dim(X)
     for (i in 1:d[1]) {
         Xi <- X@data[i, , ]
@@ -78,9 +71,8 @@ function (X, pseudocount = 1e-10)
     }
     X
 }
-.diag <-
-function (S) 
-{
+
+.diag <- function(S){
     if (dim(S)[1] != dim(S)[2] || dim(S)[2] != dim(S)[3]) {
         stop("Symmetric Tensor is required!")
     }
@@ -90,9 +82,8 @@ function (S)
     }
     out
 }
-.slice <-
-function (X, mode = 1, column = 1) 
-{
+
+.slice <- function(X, mode = 1, column = 1){
     if (mode == 1) {
         d <- dim(X[column, , ])
         out <- rand_tensor(modes = c(1, d[1:2]))
@@ -113,9 +104,8 @@ function (X, mode = 1, column = 1)
     }
     out
 }
-.contProd <-
-function (A, B, mode = 1) 
-{
+
+.contProd <- function(A, B, mode = 1){
     l <- dim(A)
     if (mode == 1) {
         out <- rep(0, length = l[1])
