@@ -1,11 +1,22 @@
-.recError <- function (X = NULL, X_bar = NULL){
+.columnNorm <- function(X){
+    X_norm <- apply(X, 2, function(x){
+        norm(as.matrix(x), "F")
+    })
+    t(t(X) / X_norm)
+}
+
+.recError <- function (X = NULL, X_bar = NULL, notsqrt = FALSE){
     if (is(X)[1] == "matrix" && is(X_bar)[1] == "matrix") {
         v <- as.vector(X_bar - X)
     }
     else if (is(X)[1] == "Tensor" && is(X_bar)[1] == "Tensor") {
         v <- vec(X_bar - X)
     }
-    sqrt(sum(v * v))
+    if(notsqrt){
+        sum(v * v)
+    }else{
+        sqrt(sum(v * v))
+    }
 }
 
 .positive <- function(X, thr = 1e-10){

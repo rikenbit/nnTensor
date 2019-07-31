@@ -11,9 +11,9 @@ NMF decompose the matrix to two low-dimensional factor matices.
 This function is also used as initialization step of tensor decomposition (see also NTF and NTD).
 }
 \usage{
-NMF(X, J = 3, algorithm = "Frobenius", Alpha = 1,
+NMF(X, J = 3, algorithm = "KL", Alpha = 1,
   Beta = 2, eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10,
-  tol = 1e-04, num.iter = 100, viz = FALSE, figdir = ".", verbose = FALSE)
+  tol = 1e-04, num.iter = 100, viz = FALSE, figdir = NULL, verbose = FALSE)
 }
 
 \arguments{
@@ -24,7 +24,7 @@ The input Matrix which has N-rows and M-columns.
 Number of low-dimension (J < N, M).
 }
   \item{algorithm}{
-NMF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "PGD", "Alpha", "Beta", and "GCD" are available (Default: "Frobenius").
+NMF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "PGD", "Alpha", "Beta", and "GCD" are available (Default: "KL").
 }
   \item{Alpha}{
 The parameter of Alpha-divergence.
@@ -74,9 +74,8 @@ Keigo Kimura, (2017). A Study on Efficient Algorithms for Nonnegative Matrix/Ten
 \author{Koki Tsuyuzaki}
 
 \examples{
-library("fields")
 matdata <- toyModel(model = "NMF")
-out <- NMF(matdata, J=2, algorithm="Frobenius", num.iter=2)
+out <- NMF(matdata, J=2, num.iter=2)
 }
 
 \keyword{methods}

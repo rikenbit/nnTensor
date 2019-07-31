@@ -6,10 +6,13 @@ import(tagcloud)
 importFrom("grDevices", "dev.off", "png")
 importFrom("methods", "is")
 importFrom("stats", "runif", "sd", "rpois")
+importFrom("graphics", "layout")
 
 export(
     toyModel,
     NMF,
+    siNMF,
+    jNMF,
     plotTensor3D,
     recTensor,
     NTD,

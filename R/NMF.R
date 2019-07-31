@@ -1,8 +1,6 @@
-NMF <-
-function (X, J = 3, algorithm = "Frobenius", Alpha = 1, Beta = 2,
+NMF <- function(X, J = 3, algorithm = "KL", Alpha = 1, Beta = 2,
     eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04, num.iter = 100,
-    viz = FALSE, figdir = ".", verbose = FALSE)
-{
+    viz = FALSE, figdir = NULL, verbose = FALSE) {
     X[which(X == 0)] <- 1e-10
     U <- matrix(runif(nrow(X) * J), nrow = nrow(X), ncol = J)
     V <- matrix(runif(ncol(X) * J), nrow = ncol(X), ncol = J)
@@ -94,10 +92,13 @@ function (X, J = 3, algorithm = "Frobenius", Alpha = 1, Beta = 2,
         X_bar <- .recMatrix(U, V)
         RecError[iter] <- .recError(X, X_bar)
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
-        if (viz) {
+        if (viz && !is.null(figdir)) {
             png(filename = paste0(figdir, "/", iter-1, ".png"))
             image.plot(X_bar)
             dev.off()
+        }
+        if (viz && is.null(figdir)) {
+            image.plot(X_bar)
         }
         if (verbose) {
             cat(paste0(iter-1, " / ", num.iter, " |Previous Error - Error| / Error = ",
@@ -107,13 +108,16 @@ function (X, J = 3, algorithm = "Frobenius", Alpha = 1, Beta = 2,
             stop("NaN is generated. Please run again or change the parameters.\n")
         }
     }
-    if (viz) {
+    if (viz && !is.null(figdir)) {
         png(filename = paste0(figdir, "/finish.png"))
         image.plot(X_bar)
         dev.off()
         png(filename = paste0(figdir, "/original.png"))
         image.plot(X)
         dev.off()
+    }
+    if (viz && is.null(figdir)) {
+        image.plot(X_bar)
     }
     names(RecError) <- c("offset", 1:(iter-1))
     names(RelChange) <- c("offset", 1:(iter-1))
