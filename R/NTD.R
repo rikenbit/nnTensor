@@ -1,9 +1,6 @@
 NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF",
     Alpha = 1, Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE,
     figdir = NULL, verbose = FALSE){
-    if (length(dim(X)) != length(rank)) {
-        stop("Please specify the appropriate rank\n")
-    }
     if (verbose) {
         cat("Initialization step is running...\n")
     }

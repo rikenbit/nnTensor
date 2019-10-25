@@ -4,7 +4,7 @@ jNMF <- function(X, J = 3, w=NULL, algorithm = "KL", p=1,
     if(!is.list(X)){
         stop("input X must be specified as a list!")
     }
-    if(length(X) <= 2){
+    if(length(X) < 2){
         stop("input list X must have at least two datasets!")
     }
     if(is.null(w)){

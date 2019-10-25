@@ -1,8 +1,7 @@
 Package: nnTensor
 Type: Package
 Title: Non-Negative Tensor Decomposition
-Version: 1.0.0
-Date: 2019-07-30
+Version: 1.0.2
 Author: Koki Tsuyuzaki, Manabu Ishii, Itoshi Nikaido
 Maintainer: Koki Tsuyuzaki <k.t.the-answer@hotmail.co.jp>
 Suggests: testthat

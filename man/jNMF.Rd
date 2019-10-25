@@ -3,7 +3,7 @@
 \alias{jNMF}
 
 \title{
-Simultaneous Non-negative Matrix Factorization Algorithms (jNMF)
+Joint Non-negative Matrix Factorization Algorithms (jNMF)
 }
 \description{
 The input data objects are assumed to be non-negative matrices.
