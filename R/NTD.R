@@ -6,12 +6,8 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
     }
     modes <- unique(modes)
     modes <- modes[order(modes)]
-    if(!all(modes <= 3)){
-        stop("Please specify the modes.\n
-            Possible modes is as follows:
-            NTD3 : c(1,2,3) (default)
-            NTD2 : c(1,2), c(1,3), c(2,3),
-            NTD1 : 1, 2, 3")
+    if(length(modes) != length(rank)){
+        stop("Please the length(modes) and length(rank) as same")
     }
     X <- .pseudocount(X)
     N <- length(dim(X))
@@ -20,6 +16,7 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
     names(A)[modes] <- paste0("A", modes)
     Iposition <- setdiff(seq_len(N), modes)
     names(A)[Iposition] <- paste0("I", seq_along(Iposition))
+    rank <- .insertNULL(rank, Iposition, N)
 
     if (init == "NMF") {
         sapply(modes, function(n) {
@@ -29,8 +26,7 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
                 x/norm(as.matrix(x), "F")
             }))
         })
-    }
-    else if (init == "ALS") {
+    } else if (init == "ALS") {
         sapply(modes, function(n) {
             Xn <- cs_unfold(X, m = n)@data
             An <- .positive(svd(Xn)$u[1:rank[n], ])
@@ -38,8 +34,7 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
                 x/norm(as.matrix(x), "F")
             }))
         })
-    }
-    else if (init == "Random") {
+    } else if (init == "Random") {
         sapply(modes, function(n) {
             A[[n]] <<- matrix(runif(rank[n] * dim(X)[n]),
                 nrow = rank[n], ncol = dim(X)[n])
@@ -58,12 +53,7 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
     RelChange[1] <- thr * 10
     if (algorithm == "HALS") {
         E <- X - recTensor(S=S, A=A, idx=modes)
-        J_hat <- lapply(apply(expand.grid(1:rank[1], 1:rank[2],
-            1:rank[3]), 1, function(x) {
-            as.list(x)
-        }), function(y) {
-            unlist(y)
-        })
+        eval(parse(text=.HALSCMD1(N)))
     }
     if (algorithm == "Frobenius") {
         Beta = 2
@@ -127,7 +117,7 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
                     X_barkn, mode = n)/wjn)
                   E <- E + ttm(X_barkn, as.matrix(A[[n]][jn,
                     ] - ajn), m = n)
-                  A[[n]][jn, ] <- ajn/norm(as.matrix(ajn), "F")
+                  A[[n]][jn, ] <- ajn / norm(as.matrix(ajn), "F")
                 }
             }
             else {
@@ -138,7 +128,8 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
             S <- .positive(recTensor(S=X, A=A, idx=modes, reverse = TRUE))
             numer <- (X/recTensor(S=S, A=A, idx=modes))^Alpha
             denom <- X
-            denom[,,] <- 1
+            cmd <- paste0("denom[",
+                paste(rep("", length=length(dim(X))), collapse=","), "] <- 1")
             for (n in 1:N) {
                 numer <- ttm(numer, A[[n]], m = n)
                 denom <- ttm(denom, A[[n]], m = n)
@@ -157,18 +148,12 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
         }
         else if (algorithm == "HALS") {
             for (j_ijk in 1:length(J_hat)) {
-                j1 <- J_hat[[j_ijk]][1]
-                j2 <- J_hat[[j_ijk]][2]
-                j3 <- J_hat[[j_ijk]][3]
-                A1 <- as.matrix(A[[1]][j1, ])
-                A2 <- as.matrix(A[[2]][j2, ])
-                A3 <- as.matrix(A[[3]][j3, ])
-                S_old <- S[j1, j2, j3]@data
-                S@data[j1, j2, j3] <- .positive(as.numeric(S_old +
-                  as.vector(recTensor(S=E, A=list(A1, A2, A3))@data)))
-                diffS <- as.numeric(S_old - (S[j1, j2, j3])@data)
-                E <- E + recTensor(S=diffS, A=list(t(A1), t(A2),
-                  t(A3)))
+                eval(parse(text=.HALSCMD2(N)))
+                eval(parse(text=.HALSCMD3(N)))
+                eval(parse(text=.HALSCMD4(N)))
+                eval(parse(text=.HALSCMD5(N)))
+                eval(parse(text=.HALSCMD6(N)))
+                eval(parse(text=.HALSCMD7(N)))
             }
         }
         else {
@@ -184,12 +169,12 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
         X_bar <- recTensor(S=S, A=A, idx=modes)
         RecError[iter] <- .recError(X, X_bar)
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
-        if (viz && !is.null(figdir)) {
+        if (viz && !is.null(figdir) && N == 3) {
             png(filename = paste0(figdir, "/", iter, ".png"))
             plotTensor3D(X_bar)
             dev.off()
         }
-        if (viz && is.null(figdir)) {
+        if (viz && is.null(figdir) && N == 3) {
             plotTensor3D(X_bar)
         }
         if (verbose) {
@@ -200,7 +185,7 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
             stop("NaN is generated. Please run again or change the parameters.\n")
         }
     }
-    if (viz && !is.null(figdir)) {
+    if (viz && !is.null(figdir) && N == 3) {
         png(filename = paste0(figdir, "/finish.png"))
         plotTensor3D(X_bar)
         dev.off()
@@ -208,7 +193,7 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
         plotTensor3D(X)
         dev.off()
     }
-    if (viz && is.null(figdir)) {
+    if (viz && is.null(figdir) && N == 3) {
         plotTensor3D(X_bar)
     }
     names(RecError) <- c("offset", 1:(iter-1))

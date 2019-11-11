@@ -1,3 +1,6 @@
+#
+# 3-order tensor
+#
 X <- toyModel("CP")
 
 out1_1 <- NTF(X, rank=3, algorithm="Frobenius", num.iter=2)
@@ -27,3 +30,42 @@ expect_equivalent(length(out8), 4)
 expect_equivalent(length(out9), 4)
 expect_equivalent(length(out10), 4)
 expect_equivalent(length(out11), 4)
+
+#
+# 4-order tensor
+#
+# library("rTensor")
+# XX <- array(0, dim=c(30,30,30,4))
+# XX[,,,1] <- X@data
+# XX[,,,2] <- X@data * runif(length(X@data))
+# XX[,,,3] <- X@data * 1.2 * runif(length(X@data))
+# XX[,,,4] <- X@data * 3 * runif(length(X@data))
+# XX <- as.tensor(XX)
+
+# out_NTF4_1_1 <- NTF(XX, rank=3, algorithm="Frobenius", num.iter=2)
+# out_NTF4_1_2 <- NTF(XX, rank=3, algorithm="Frobenius", init="ALS", num.iter=2)
+# out_NTF4_1_3 <- NTF(XX, rank=3, algorithm="Frobenius", init="Random", num.iter=2)
+# out_NTF4_2 <- NTF(XX, rank=3, algorithm="KL", num.iter=2)
+# out_NTF4_3 <- NTF(XX, rank=3, algorithm="IS", num.iter=2)
+# out_NTF4_4 <- NTF(XX, rank=3, algorithm="Pearson", num.iter=2)
+# out_NTF4_5 <- NTF(XX, rank=3, algorithm="Hellinger", num.iter=2)
+# out_NTF4_6 <- NTF(XX, rank=3, algorithm="Neyman", num.iter=2)
+# out_NTF4_7 <- NTF(XX, rank=3, algorithm="Alpha", num.iter=2)
+# out_NTF4_8 <- NTF(XX, rank=3, algorithm="Beta", num.iter=2)
+# out_NTF4_9 <- NTF(XX, rank=3, algorithm="HALS", num.iter=2)
+# out_NTF4_10 <- NTF(XX, rank=3, algorithm="Alpha-HALS", num.iter=2)
+# out_NTF4_11 <- NTF(XX, rank=3, algorithm="Beta-HALS", num.iter=2)
+
+# expect_equivalent(length(out_NTF4_1_1), 4)
+# expect_equivalent(length(out_NTF4_1_2), 4)
+# expect_equivalent(length(out_NTF4_1_3), 4)
+# expect_equivalent(length(out_NTF4_2), 4)
+# expect_equivalent(length(out_NTF4_3), 4)
+# expect_equivalent(length(out_NTF4_4), 4)
+# expect_equivalent(length(out_NTF4_5), 4)
+# expect_equivalent(length(out_NTF4_6), 4)
+# expect_equivalent(length(out_NTF4_7), 4)
+# expect_equivalent(length(out_NTF4_8), 4)
+# expect_equivalent(length(out_NTF4_9), 4)
+# expect_equivalent(length(out_NTF4_10), 4)
+# expect_equivalent(length(out_NTF4_11), 4)

@@ -73,71 +73,129 @@
     Unew
 }
 
+.insertNULL <- function(rank, Iposition, N){
+    out <- rep(0, length=N)
+    out[setdiff(1:N, Iposition)] <- rank
+    out
+}
+
 .pseudocount <- function(X, pseudocount = 1e-10){
-    d <- dim(X)
-    for (i in 1:d[1]) {
-        Xi <- X@data[i, , ]
-        Xi[which(Xi == 0)] <- pseudocount
-        X@data[i, , ] <- Xi
-    }
+    X@data[which(X@data == 0)] <- pseudocount
     X
 }
 
-.diag <- function(S){
-    if (dim(S)[1] != dim(S)[2] || dim(S)[2] != dim(S)[3]) {
-        stop("Symmetric Tensor is required!")
-    }
-    out <- rep(0, length = dim(S)[1])
-    for (x in 1:length(out)) {
-        out[x] <- S@data[x, x, x]
+.KhatriRao_notn <- function(A, n){
+    idx <- setdiff(seq_len(length(A)), n)
+    out <- t(A[[idx[1]]])
+    for(notn in setdiff(idx, idx[1])){
+        out <- khatri_rao(out, t(A[[notn]]))
     }
     out
 }
 
+.CPCore <- function(A){
+    ranks <- unique(unlist(lapply(A, nrow)))
+    if(length(ranks) >= 2){
+        stop("The number of rows of all factor matrices must be same")
+    }
+    norms <- lapply(A, function(a){
+
+    })
+}
+
 .slice <- function(X, mode = 1, column = 1){
-    if (mode == 1) {
-        d <- dim(X[column, , ])
-        out <- rand_tensor(modes = c(1, d[1:2]))
-        out[1, , ] <- X[column, , ]
-    }
-    else if (mode == 2) {
-        d <- dim(X[, column, ])
-        out <- rand_tensor(modes = c(d[1], 1, d[2]))
-        out[, 1, ] <- X[, column, ]
-    }
-    else if (mode == 3) {
-        d <- dim(X[, , column])
-        out <- rand_tensor(modes = c(d[1:2], 1))
-        out[, , 1] <- X[, , column]
-    }
-    else {
-        stop("Wrong mode!\n")
-    }
+    N <- length(dim(X))
+    notmode <- setdiff(seq(N), mode)
+    d <- dim(X)[notmode]
+    modes <- rep(1, length=N)
+    modes[notmode] <- d
+    out <- rand_tensor(modes)
+    tmp1 <- rep("", length=N)
+    tmp2 <- rep("", length=N)
+    tmp1[mode] <- 1
+    tmp2[mode] <- "column"
+    cmd <- paste0(
+        "out[",
+        paste0(tmp1, collapse=","),
+        "] <- X[",
+        paste0(tmp2, collapse=","),
+        "]"
+    )
     out
 }
 
 .contProd <- function(A, B, mode = 1){
     l <- dim(A)
-    if (mode == 1) {
-        out <- rep(0, length = l[1])
-        for (i in 1:l[1]) {
-            out[i] <- sum(A[i, , ]@data * B[1, , ]@data)
-        }
-    }
-    else if (mode == 2) {
-        out <- rep(0, length = l[2])
-        for (i in 1:l[2]) {
-            out[i] <- sum(A[, i, ]@data * B[, 1, ]@data)
-        }
-    }
-    else if (mode == 3) {
-        out <- rep(0, length = l[3])
-        for (i in 1:l[3]) {
-            out[i] <- sum(A[, , i]@data * B[, , 1]@data)
-        }
-    }
-    else {
-        stop("Wrong mode!\n")
+    N <- length(l)
+    out <- rep(0, length=l[mode])
+    tmp1 <- rep("", length=N)
+    tmp2 <- rep("", length=N)
+    tmp1[mode] <- "i"
+    tmp2[mode] <- 1
+    cmd <- paste0(
+        "out[i] <- sum(A[",
+        paste(tmp1, collapse=","),
+        "]@data * B[",
+        paste(tmp2, collapse=","),
+        "]@data)"
+    )
+    for(i in seq(l[mode])){
+        eval(parse(text=cmd))
     }
     out
 }
+
+.HALSCMD1 <- function(N){
+    paste0(
+        "J_hat <- lapply(apply(expand.grid(",
+        paste0("1:rank[", seq(N), "]", collapse=","),
+        "), 1, function(x){",
+        "as.list(x)",
+        "}), function(y){",
+        "unlist(y)",
+        "})")
+}
+
+.HALSCMD2 <- function(N){
+    paste0("j", seq(N),
+        " <- J_hat[[j_ijk]][", seq(N), "]", collapse=";")
+}
+
+.HALSCMD3 <- function(N){
+    paste0("A", seq(N), " <- as.matrix(A[[", seq(N),
+        "]][j", seq(N), ", ])", collapse=";")
+}
+
+.HALSCMD4 <- function(N){
+    paste0("S_old <- S[",
+        paste0("j", seq(N), collapse=","), "]@data")
+}
+
+.HALSCMD5 <- function(N){
+    paste0("S@data[",
+        paste0("j", seq(N), collapse=","),
+        "] <- .positive(as.numeric(S_old + as.vector(",
+        "recTensor(S=E, A=list(",
+        paste0("A", seq(N), collapse=","),
+        "))@data)))"
+        )
+}
+
+.HALSCMD6 <- function(N){
+    paste0("diffS <- as.numeric(S_old - S[",
+        paste0("j", seq(N), collapse=","),
+        "]@data)"
+        )
+}
+
+.HALSCMD7 <- function(N){
+    paste0("E <- E + recTensor(S=diffS, A=list(",
+        paste0("t(A", seq(N), ")", collapse=","),
+        "), idx=modes)")
+}
+
+.HALSCMD8 <- function(N){
+    tmp <- paste0("(A[[", seq(N), "]] %*% t(A[[", seq(N), "]]))")
+    paste(tmp, collapse=" * ")
+}
+
