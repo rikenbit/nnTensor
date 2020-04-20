@@ -37,6 +37,24 @@ Yong-Deok Kim et. al., (2008). Nonneegative Tucker Decomposition With Alpha-Dive
 Anh Huy Phan, (2008). Fast and efficient algorithms for nonnegative Tucker decomposition. \emph{Advances in Neural Networks - ISNN2008}
 
 Anh Hyu Phan et. al. (2011). Extended HALS algorithm for nonnegative Tucker decomposition and its applications for multiway analysis and classification. \emph{Neurocomputing}
+
+Jean-Philippe Brunet. et. al., (2004). Metagenes and molecular pattern discovery using matrix factorization. \emph{PNAS}
+
+Xiaoxu Han. (2007). CANCER MOLECULAR PATTERN DISCOVERY BY SUBSPACE CONSENSUS KERNEL CLASSIFICATION
+
+Attila Frigyesi. et. al., (2008). Non-Negative Matrix Factorization for the Analysis of Complex Gene Expression Data: Identification of Clinically Relevant Tumor Subtypes. \emph{Cancer Informatics}
+
+Haesun Park. et. al., (2019). Lecture 3: Nonnegative Matrix Factorization: Algorithms and Applications. \emph{SIAM Gene Golub Summer School, Aussois France, June 18, 2019}
+
+Chunxuan Shao. et. al., (2017). Robust classification of single-cell transcriptome data by nonnegative matrix factorization. \emph{Bioinformatics}
+
+Paul Fogel (2013). Permuted NMF: A Simple Algorithm Intended to Minimize the Volume of the Score Matrix
+
+Philip M. Kim. et. al., (2003). Subsystem Identification Through Dimensionality Reduction of Large-Scale Gene Expression Data. \emph{Genome Research}
+
+Lucie N. Hutchins. et. al., (2008). Position-dependent motif characterization using non-negative matrix factorization. \emph{Bioinformatics}
+
+Patrik O. Hoyer (2004). Non-negative Matrix Factorization with Sparseness Constraints. \emph{Journal of Machine Learning 5}
 }
 
 \keyword{ package }

@@ -51,6 +51,7 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
     X_bar <- recTensor(S=S, A=A, idx=modes)
     RecError[1] <- .recError(X, X_bar)
     RelChange[1] <- thr * 10
+    J_hat <- NULL
     if (algorithm == "HALS") {
         E <- X - recTensor(S=S, A=A, idx=modes)
         eval(parse(text=.HALSCMD1(N)))
@@ -83,9 +84,11 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
         cat("Iterative step is running...\n")
     }
     while ((RecError[iter] > thr) && (iter <= num.iter)) {
-        # Before Update U, V
         X_bar <- recTensor(S=S, A=A, idx=modes)
         pre_Error <- .recError(X, X_bar)
+        #
+        # Update factor matrices
+        #
         for (n in modes) {
             if (algorithm == "Alpha") {
                 S_A <- t(cs_unfold(S, m = n)@data) %*% kronecker_list(sapply(rev(setdiff(1:N,
@@ -124,6 +127,18 @@ NTD <- function(X, rank = c(3, 3, 3), modes = 1:3, algorithm = "KL", init = "NMF
                 stop("Please specify the appropriate algorithm\n")
             }
         }
+        #
+        # Normalization of factor matrices
+        #
+        for (n in modes) {        
+            colsumvec <- apply(A[[n]], 2, function(x){
+                norm(as.matrix(x), "F")
+            })
+            A[[n]] <- t(t(A[[n]]) / colsumvec)
+        }
+        #
+        # Update Core tensor
+        #
         if (algorithm == "Alpha") {
             S <- .positive(recTensor(S=X, A=A, idx=modes, reverse = TRUE))
             numer <- (X/recTensor(S=S, A=A, idx=modes))^Alpha

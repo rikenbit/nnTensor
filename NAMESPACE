@@ -2,11 +2,14 @@ import(fields)
 import(rTensor)
 import(plot3D)
 import(tagcloud)
+import(ggplot2)
 
-importFrom("grDevices", "dev.off", "png")
-importFrom("methods", "is")
-importFrom("stats", "runif", "sd", "rpois")
-importFrom("graphics", "layout")
+importFrom(grDevices, dev.off, png)
+importFrom(methods, is)
+importFrom(stats, runif, sd, rpois)
+importFrom(graphics, layout)
+importFrom("stats", "as.dist", "cophenetic", "cor", "hclust")
+importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 
 export(
     toyModel,
@@ -16,5 +19,8 @@ export(
     plotTensor3D,
     recTensor,
     NTD,
-    NTF
+    NTF,
+    plot.NMF
 	)
+
+S3method(plot, NMF)
