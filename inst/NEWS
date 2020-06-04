@@ -1,3 +1,10 @@
+VERSION 1.0.5
+------------------------
+   o Mask matrix/tensor were implemented for NMF, jNMF, siNMF, NTF, and NTD. These options are for missing values estimation (Imputation).
+   o Initial matrix/tensor were implemented for NMF, jNMF, siNMF, NTF, and NTD.
+   o fix* options were implemented for transfer learning.
+   o Gabriel-style cross-validation was implemented as GabrielNMF.
+
 VERSION 1.0.4
 ------------------------
    o Rank estimation methods and plot functions were implemented for NMF

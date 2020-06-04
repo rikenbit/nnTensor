@@ -36,6 +36,8 @@ References
 	- Philip M. Kim. et. al., (2003). Subsystem Identification Through Dimensionality Reduction of Large-Scale Gene Expression Data. Genome Research
 	- Lucie N. Hutchins. et. al., (2008). Position-dependent motif characterization using non-negative matrix factorization. Bioinformatics
 	- Patrik O. Hoyer (2004). Non-negative Matrix Factorization with Sparseness Constraints. Journal of Machine Learning 5
+	- N. Fujita et al., (2018) Biomarker discovery by integrated joint non-negative matrix factorization and pathway signature analyses, Scientific Report
+	- Art B. Owen et. al., (2009). Bi-Cross-Validation of the SVD and the Nonnegative Matrix Factorization. The Annals of Applied Statistics
 
 ## License
 Copyright (c) 2018 Koki Tsuyuzaki and Laboratory for Bioinformatics Research, RIKEN Center for Biosystems Dynamics Reseach

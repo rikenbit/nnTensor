@@ -1,10 +1,34 @@
-NMF <- function(X, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,
-    algorithm = "KL", Alpha = 1, Beta = 2,
+NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,
+    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD"), Alpha = 1, Beta = 2,
     eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04, num.iter = 100,
     viz = FALSE, figdir = NULL, verbose = FALSE){
     # Argument check
     if(!is.matrix(X)){
         stop("Please specify the X as a matrix")
+    }
+    if(!is.null(M)){
+        if(!identical(dim(X), dim(M))){
+            stop("Please specify the dimensions of X and M are same")
+        }
+    }else{
+        M <- X
+        M[,] <- 1
+    }
+    if(!is.null(initU)){
+        if(!identical(nrow(X), nrow(initU))){
+            stop("Please specify nrow(X) and nrow(initU) are same")
+        }
+    }
+    if(!is.null(initV)){
+        if(!identical(ncol(X), nrow(initV))){
+            stop("Please specify ncol(X) and nrow(initV) are same")
+        }
+    }
+    if(!is.logical(fixU)){
+        stop("Please specify the fixU as a logical")
+    }
+    if(!is.logical(fixV)){
+        stop("Please specify the fixV as a logical")
     }
     if(!is.numeric(J)){
         stop("Please specify the J as a number or a numeric vector")
@@ -49,12 +73,12 @@ NMF <- function(X, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar
         out1 <- .lapply_pb(J, function(j){
             # Original data
             out.original <- lapply(seq_len(runtime), function(r){
-                try(.eachNMF(X, j, algorithm, Alpha, Beta, eta, thr1, thr2,
+                try(.eachNMF(X, M, initU, initV, fixU, fixV, j, algorithm, Alpha, Beta, eta, thr1, thr2,
                     tol, num.iter, viz, figdir, verbose))
             })
             # Rand data
             out.random <- lapply(seq_len(runtime), function(r){
-                try(.eachNMF(.randomize(X), j, algorithm, Alpha, Beta, eta, thr1, thr2,
+                try(.eachNMF(.randomize(X), M, initU, initV, fixU, fixV, j, algorithm, Alpha, Beta, eta, thr1, thr2,
                     tol, num.iter, viz, figdir, verbose))
             })
             list(out.original=out.original, out.random=out.random)
@@ -79,34 +103,57 @@ NMF <- function(X, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar
             V = NULL,
             J = J,
             RecError = NULL,
+            TrainRecError = NULL,
+            TestRecError = NULL,
             RelChange = NULL,
             Trial = out2, Runtime = runtime, RankMethod=rank.method)
         class(out) <- "NMF"
         out
     }else{
-        out1 <- .eachNMF(X, J, algorithm, Alpha, Beta, eta, thr1, thr2,
+        out1 <- .eachNMF(X, M, initU, initV, fixU, fixV, J, algorithm, Alpha, Beta, eta, thr1, thr2,
             tol, num.iter, viz, figdir, verbose)
         list(U = out1$U,
             V = out1$V,
             J = J,
             RecError = out1$RecError,
+            TrainRecError = out1$TrainRecError,
+            TestRecError = out1$TestRecError,
             RelChange = out1$RelChange,
             Trial = NULL, Runtime = NULL, RankMethod=NULL)
     }
 }
 
-.eachNMF <- function(X, J, algorithm, Alpha, Beta, eta, thr1, thr2,
+.eachNMF <- function(X, M, initU, initV, fixU, fixV, J, algorithm, Alpha, Beta, eta, thr1, thr2,
     tol, num.iter, viz, figdir, verbose) {
     X[which(X == 0)] <- 1e-10
-    U <- matrix(runif(nrow(X) * J), nrow = nrow(X), ncol = J)
-    V <- matrix(runif(ncol(X) * J), nrow = ncol(X), ncol = J)
-    U <- U * U
-    V <- V * V
+    M[which(M == 0)] <- 1e-10
+
+    # Initialization of U, V
+    if(is.null(initU)){
+        U <- matrix(runif(nrow(X) * J), nrow = nrow(X), ncol = J)
+        U <- U * U
+    }else{
+        U <- initU
+    }
+    if(is.null(initV)){
+        V <- matrix(runif(ncol(X) * J), nrow = ncol(X), ncol = J)
+        V <- V * V
+    }else{
+        V <- initV
+    }
+
     RecError = c()
+    TrainRecError = c()
+    TestRecError = c()
     RelChange = c()
+
     RecError[1] <- thr1 * 10
+    TrainRecError[1] <- thr1 * 10
+    TestRecError[1] <- thr1 * 10
     RelChange[1] <- thr1 * 10
+
     iter <- 1
+
     if (algorithm == "HALS") {
         R <- X - U %*% t(V)
     }
@@ -138,26 +185,36 @@ NMF <- function(X, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar
         cat("Iterative step is running...\n")
     }
     while ((RecError[iter] > thr1) && (iter <= num.iter)) {
-        # Before Update U, V
+        # Update U, V
         X_bar <- .recMatrix(U, V)
         pre_Error <- .recError(X, X_bar)
         if (algorithm == "PGD") {
-            U <- .positive(U - eta * (-2 * X %*% V + 2 * U %*%
-                t(V) %*% V), thr2)
-            V <- .positive(V - eta * (-2 * t(X) %*% U + 2 * V %*%
-                t(U) %*% U), thr2)
+            if(!fixU){
+                U <- .positive(U - eta * (-2 * (M * X) %*% V + 2 * (M * U %*% t(V)) %*% V), thr2)                
+            }
+            if(!fixV){
+                V <- .positive(V - eta * (-2 * t(M * X) %*% U + 2 * (t(M) * V %*% t(U)) %*% U), thr2)
+            }
         }
         else if (algorithm == "Alpha") {
-            U <- U * (((X/(U %*% t(V)))^Alpha %*% V)/(matrix(1,
-                nrow = nrow(X), ncol = 1) %*% colSums(V)))^(1/Alpha)
-            V <- V * ((t(X/(U %*% t(V)))^Alpha %*% U)/(matrix(1,
-                nrow = ncol(X), ncol = 1) %*% colSums(U)))^(1/Alpha)
+            if(!fixU){
+                U <- U * ((((M * X)/(M * U %*% t(V)))^Alpha %*% V)/(matrix(1,
+                    nrow = nrow(X), ncol = 1) %*% colSums(V)))^(1/Alpha)
+            }
+            if(!fixV){
+                V <- V * ((t((M * X)/(M * U %*% t(V)))^Alpha %*% U)/(matrix(1,
+                    nrow = ncol(X), ncol = 1) %*% colSums(U)))^(1/Alpha)
+            }
         }
         else if (algorithm == "Beta") {
-            U <- U * (((U %*% t(V))^(Beta - 2) * X) %*% V)/((U %*%
+            if(!fixU){
+                U <- U * (((M * U %*% t(V))^(Beta - 2) * (M * X)) %*% V)/((M * U %*%
                 t(V))^(Beta - 1) %*% V)
-            V <- V * (t((U %*% t(V))^(Beta - 2) * X) %*% U)/(t((U %*%
+            }
+            if(!fixV){                
+                V <- V * (t((M * U %*% t(V))^(Beta - 2) * (M * X)) %*% U)/(t((M * U %*%
                 t(V))^(Beta - 1)) %*% U)
+            }
         }
         else if (algorithm == "HALS") {
             A <- X %*% V
@@ -175,10 +232,14 @@ NMF <- function(X, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar
             }
         }
         else if (algorithm == "GCD") {
-            Unew <- .doiter(U, V, X, tol = tol, J)
-            U <- U + Unew
-            Vnew <- .doiter(V, U, t(X), tol = tol, J)
-            V <- V + Vnew
+            if(!fixU){
+                Unew <- .doiter(U, V, X, tol = tol, J)
+                U <- U + Unew                
+            }
+            if(!fixV){
+                Vnew <- .doiter(V, U, t(X), tol = tol, J)
+                V <- V + Vnew                
+            }
         }
         else {
             stop("Please specify the appropriate algorithm\n")
@@ -187,6 +248,8 @@ NMF <- function(X, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar
         iter <- iter + 1
         X_bar <- .recMatrix(U, V)
         RecError[iter] <- .recError(X, X_bar)
+        TrainRecError[iter] <- .recError(M*X, M*X_bar)
+        TestRecError[iter] <- .recError((1-M)*X, (1-M)*X_bar)
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
         if (viz && !is.null(figdir)) {
             png(filename = paste0(figdir, "/", iter-1, ".png"))
@@ -216,8 +279,14 @@ NMF <- function(X, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar
         image.plot(X_bar)
     }
     names(RecError) <- c("offset", 1:(iter-1))
+    names(TrainRecError) <- c("offset", 1:(iter-1))
+    names(TestRecError) <- c("offset", 1:(iter-1))
     names(RelChange) <- c("offset", 1:(iter-1))
-    list(U = U, V = V, RecError = RecError, RelChange = RelChange)
+
+    list(U = U, V = V, RecError = RecError,
+        TrainRecError = TrainRecError,
+        TestRecError = TestRecError,
+        RelChange = RelChange)
 }
 
 plot <- function(x, ...){

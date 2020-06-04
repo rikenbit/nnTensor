@@ -22,5 +22,3 @@ out19 <- NMF(X, num.iter=2, runtime=30, rank.est=TRUE, rank.method="entropy.coef
 out20 <- NMF(X, num.iter=2, runtime=30, rank.est=TRUE, rank.method="singular")
 out21 <- NMF(X, num.iter=2, runtime=30, rank.est=TRUE, rank.method="volume")
 out22 <- NMF(X, num.iter=2, runtime=30, rank.est=TRUE, rank.method="condition")
-
-# expect_equivalent(length(out1), 4)

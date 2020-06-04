@@ -55,6 +55,10 @@ Philip M. Kim. et. al., (2003). Subsystem Identification Through Dimensionality 
 Lucie N. Hutchins. et. al., (2008). Position-dependent motif characterization using non-negative matrix factorization. \emph{Bioinformatics}
 
 Patrik O. Hoyer (2004). Non-negative Matrix Factorization with Sparseness Constraints. \emph{Journal of Machine Learning 5}
+
+N. Fujita et al., (2018) Biomarker discovery by integrated joint non-negative matrix factorization and pathway signature analyses, \emph{Scientific Report}
+
+Art B. Owen et. al., (2009). Bi-Cross-Validation of the SVD and the Nonnegative Matrix Factorization. \emph{The Annals of Applied Statistics}
 }
 
 \keyword{ package }

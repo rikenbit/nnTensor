@@ -20,7 +20,8 @@ export(
     recTensor,
     NTD,
     NTF,
-    plot.NMF
+    plot.NMF,
+    GabrielNMF
 	)
 
 S3method(plot, NMF)
