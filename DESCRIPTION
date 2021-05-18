@@ -1,9 +1,12 @@
 Package: nnTensor
 Type: Package
 Title: Non-Negative Tensor Decomposition
-Version: 1.0.5
-Author: Koki Tsuyuzaki, Manabu Ishii, Itoshi Nikaido
-Maintainer: Koki Tsuyuzaki <k.t.the-answer@hotmail.co.jp>
+Version: 1.0.7
+Date: 2021-05-15
+Authors@R: c(person("Koki", "Tsuyuzaki", role = c("aut", "cre"),
+                      email = "k.t.the-answer@hotmail.co.jp"),
+               person("Manabu", "Ishii", role = "aut"),
+               person("Itoshi", "Nikaido", role = "aut"))
 Suggests: testthat
 Depends: R (>= 3.4.0)
 Imports: methods, fields, rTensor, plot3D, tagcloud, ggplot2
