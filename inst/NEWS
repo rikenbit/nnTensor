@@ -1,3 +1,8 @@
+VERSION 1.1.0
+------------------------
+   o Refactored some codes (e.g. check argument parts)
+   o L1/L2-regularization terms were introduced in NMF, jNMF, siNMF, NTF, and NTD
+
 VERSION 1.0.7
 ------------------------
    o Resubmission to CRAN due to temporary inaccessibility of rTensor

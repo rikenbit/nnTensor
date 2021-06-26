@@ -11,7 +11,7 @@ NTF decompose the tensor to the diagonal core tensor (S) and low-dimensional
 factor matices (A).
 }
 \usage{
-NTF(X, M=NULL, initA=NULL, fixA=FALSE, rank = 3,
+NTF(X, M=NULL, initA=NULL, fixA=FALSE, L1_A=1e-10, L2_A=1e-10, rank = 3,
   algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
     "HALS", "Alpha-HALS", "Beta-HALS", "Alpha", "Beta"),
   init = c("NMF", "ALS", "Random"), Alpha = 1,
@@ -34,6 +34,14 @@ A list containing the initial values of multiple factor matrices
   \item{fixA}{
 Whether the factor matrices Ak are updated in each iteration step
 (Default: FALSE).
+}
+  \item{L1_A}{
+Paramter for L1 regularitation (Default: 1e-10).
+This also works as small positive constant to prevent division by zero,
+so should be set as 0.
+}
+  \item{L2_A}{
+Paramter for L2 regularitation (Default: 1e-10).
 }
   \item{rank}{
 The number of low-dimension in each mode (J1=J2=J3, J1<I1, J2<I2, J3 < I3)

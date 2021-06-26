@@ -12,6 +12,7 @@ factor matices (A).
 }
 \usage{
 NTD(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
+  L1_A=1e-10, L2_A=1e-10,
   rank = c(3, 3, 3), modes = 1:3,
   algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger",
     "Neyman", "HALS", "Alpha", "Beta"), init = c("NMF", "ALS", "Random"),
@@ -42,6 +43,14 @@ Whether the core tensor S is updated in each iteration step (Default: FALSE).
   \item{fixA}{
 Whether the factor matrices Ak are updated in each iteration step
 (Default: FALSE).
+}
+  \item{L1_A}{
+Paramter for L1 regularitation (Default: 1e-10).
+This also works as small positive constant to prevent division by zero,
+so should be set as 0.
+}
+  \item{L2_A}{
+Paramter for L2 regularitation (Default: 1e-10).
 }
   \item{rank}{
 The number of low-dimension in each mode (J1, J2, J3, J1<I1, J2<I2, J3 < I3)

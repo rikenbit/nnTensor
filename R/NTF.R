@@ -1,155 +1,31 @@
-NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE, rank = 3, algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha-HALS", "Beta-HALS", "Alpha", "Beta"), init = c("NMF", "ALS", "Random"), Alpha = 1,
+NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
+    L1_A=1e-10, L2_A=1e-10, rank = 3,
+    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha-HALS", "Beta-HALS", "Alpha", "Beta"), init = c("NMF", "ALS", "Random"), Alpha = 1,
     Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE, figdir = NULL,
     verbose = FALSE){
     # Argument check
-    if(!is.array(X@data)){
-        stop("input X@data must be specified as a array!")
-    }
-    if(!is.null(M)){
-        if(!identical(dim(X), dim(M))){
-            stop("Please specify the dimensions of X and M are same")
-        }
-    }else{
-        M <- X
-        M@data[] <- 1
-    }
-    if(!is.null(initA)){
-        dimX <- dim(X)
-        ncolA <- as.vector(unlist(lapply(initA, ncol)))
-        if(!identical(dimX, ncolA)){
-            stop("Please specify the dimensions of X and ncol(A[[k]]) are same")
-        }
-    }
-    if(!is.logical(fixA)){
-        if(!is.vector(fixA)){
-            stop("Please specify the fixA as a logical or a logical vector such as c(TRUE, FALSE, TRUE)")
-        }else{
-            if(length(dim(X)) != length(fixA)){
-                stop("Please specify the length of fixA same as the order of X")
-            }
-        }
-    }else{
-        fixA <- rep(fixA, length=length(dim(X)))
-    }
-
-    if(!is.numeric(rank)){
-        stop("Please specify rank as numeric!")
-    }
     algorithm <- match.arg(algorithm)
     init <- match.arg(init)
-    if(!is.numeric(Alpha)){
-        stop("Please specify Alpha as numeric!")
-    }
-    if(!is.numeric(Beta)){
-        stop("Please specify Beta as numeric!")
-    }
-    if(!is.numeric(thr)){
-        stop("Please specify thr as numeric!")
-    }
-    if(!is.numeric(num.iter)){
-        stop("Please specify num.iter as numeric!")
-    }
-    if(!is.logical(viz)){
-        stop("Please specify the viz as a logical")
-    }
-    if(!is.character(figdir) && !is.null(figdir)){
-        stop("Please specify the figdir as a string or NULL")
-    }
-    if(!is.logical(verbose)){
-        stop("Please specify the verbose as a logical")
-    }
-
-    if (verbose) {
-        cat("Initialization step is running...\n")
-    }
-    X <- .pseudocount(X)
-    M <- .pseudocount(M)
-    N <- length(dim(X))
-
+    chk <- .checkNTF(X, M, initA, fixA, rank, Alpha, Beta,
+        thr, num.iter, viz, figdir, verbose)
+    X <- chk$X
+    M <- chk$M
+    fixA <- chk$fixA
+    N <- chk$N
     # Initialization of An
-    if(is.null(initA)){
-        A <- list()
-        length(A) <- N
-        for (n in seq(N)) {
-            if (init == "NMF") {
-                Xn <- cs_unfold(X, m = n)@data
-                res.nmf <- NMF(Xn, J = rank, algorithm = "KL")
-                A[[n]] <- t(res.nmf$V)
-                orderA <- order(sapply(seq(rank), function(x) {
-                    norm(as.matrix(res.nmf$V[, x], "F")) * norm(as.matrix(res.nmf$U[,
-                      x]), "F")
-                }), decreasing = TRUE)
-            } else if (init == "ALS") {
-                Xn <- cs_unfold(X, m = n)@data
-                res.svd <- svd(Xn)
-                A[[n]] <- .positive(res.svd$u[seq(rank), ])
-                orderA <- order(sapply(res.svd$d[seq(rank)], function(x) {
-                    norm(as.matrix(x), "F")
-                }), decreasing = TRUE)
-            } else if (init == "Random") {
-                A[[n]] <- matrix(runif(rank * dim(X)[n]), nrow = rank,
-                    ncol = dim(X)[n])
-                orderA <- order(apply(A[[n]], 1, function(x) {
-                    norm(as.matrix(x), "F")
-                }), decreasing = TRUE)
-            }
-            A[[n]] <- A[[n]][orderA, ]
-            if (n != N) {
-                A[[n]] <- t(apply(A[[n]], 1, function(x) {
-                    x/norm(as.matrix(x), "F")
-                }))
-            }
-        }
-    }else{
-        A <- initA
-    }
-
-    RecError = c()
-    TrainRecError = c()
-    TestRecError = c()
-    RelChange = c()
-
-    RecError[1] <- thr * 10
-    TrainRecError[1] <- thr * 10
-    TestRecError[1] <- thr * 10
-    RelChange[1] <- thr * 10
-
+    int <- .initNTF(X, N, rank, init, initA, Alpha, Beta,
+        algorithm, thr, verbose)
+    A <- int$A
+    RecError <- int$RecError
+    TrainRecError <- int$TrainRecError
+    TestRecError <- int$TestRecError
+    RelChange <- int$RelChange
+    Alpha <- int$Alpha
+    Beta <- int$Beta
+    algorithm <- int$algorithm
+    E <- int$E
+    T1 <- int$T1
     iter <- 1
-
-    if (algorithm == "HALS") {
-        T1 <- eval(parse(text=.HALSCMD8(N)))
-    }
-    if (algorithm == "Alpha-HALS" || algorithm == "Beta-HALS") {
-        X_bar <- recTensor(rep(1, length = rank), A, idx=seq(N))
-        E <- X - X_bar
-    }
-    if (algorithm == "Frobenius") {
-        Beta = 2
-        algorithm = "Beta"
-    }
-    if (algorithm == "KL") {
-        Alpha = 1
-        algorithm = "Alpha"
-    }
-    if (algorithm == "IS") {
-        Beta = 0
-        algorithm = "Beta"
-    }
-    if (algorithm == "Pearson") {
-        Alpha = 2
-        algorithm = "Alpha"
-    }
-    if (algorithm == "Hellinger") {
-        Alpha = 0.5
-        algorithm = "Alpha"
-    }
-    if (algorithm == "Neyman") {
-        Alpha = -1
-        algorithm = "Alpha"
-    }
-    if (verbose) {
-        cat("Iterative step is running...\n")
-    }
     while ((RelChange[iter] > thr) && (iter <= num.iter)) {
         # Before Update An
         X_bar <- recTensor(rep(1, length = rank), A, idx=seq(N))
@@ -178,7 +54,7 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE, rank = 3, algorithm = c("Frob
                     numer <- t(A_notn) %*% (cs_unfold(M*X, m = n)@data/cs_unfold(M*X_bar^(Beta - 1), m = n)@data)
                     denom <- t(A_notn) %*% cs_unfold(X_bar^(Beta),
                       m = n)@data
-                    A[[n]] <- A[[n]] * numer/denom
+                    A[[n]] <- A[[n]] * numer/(denom + L1_A + L2_A * A[[n]])
                     if (n != N) {
                       A[[n]] <- t(apply(A[[n]], 1, function(x) {
                         x/norm(as.matrix(x), "F")
@@ -342,4 +218,157 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE, rank = 3, algorithm = c("Frob
         TrainRecError = TrainRecError,
         TestRecError = TestRecError,
         RelChange = RelChange))
+}
+
+.checkNTF <- function(X, M, initA, fixA, rank, Alpha, Beta,
+    thr, num.iter, viz, figdir, verbose){
+    if(!is.array(X@data)){
+        stop("input X@data must be specified as a array!")
+    }
+    if(!is.null(M)){
+        if(!identical(dim(X), dim(M))){
+            stop("Please specify the dimensions of X and M are same")
+        }
+    }else{
+        M <- X
+        M@data[] <- 1
+    }
+    if(!is.null(initA)){
+        dimX <- dim(X)
+        ncolA <- as.vector(unlist(lapply(initA, ncol)))
+        if(!identical(dimX, ncolA)){
+            stop("Please specify the dimensions of X and ncol(A[[k]]) are same")
+        }
+    }
+    if(!is.logical(fixA)){
+        if(!is.vector(fixA)){
+            stop("Please specify the fixA as a logical or a logical vector such as c(TRUE, FALSE, TRUE)")
+        }else{
+            if(length(dim(X)) != length(fixA)){
+                stop("Please specify the length of fixA same as the order of X")
+            }
+        }
+    }else{
+        fixA <- rep(fixA, length=length(dim(X)))
+    }
+
+    if(!is.numeric(rank)){
+        stop("Please specify rank as numeric!")
+    }
+    if(!is.numeric(Alpha)){
+        stop("Please specify Alpha as numeric!")
+    }
+    if(!is.numeric(Beta)){
+        stop("Please specify Beta as numeric!")
+    }
+    if(!is.numeric(thr)){
+        stop("Please specify thr as numeric!")
+    }
+    if(!is.numeric(num.iter)){
+        stop("Please specify num.iter as numeric!")
+    }
+    if(!is.logical(viz)){
+        stop("Please specify the viz as a logical")
+    }
+    if(!is.character(figdir) && !is.null(figdir)){
+        stop("Please specify the figdir as a string or NULL")
+    }
+    if(!is.logical(verbose)){
+        stop("Please specify the verbose as a logical")
+    }
+    if (verbose) {
+        cat("Initialization step is running...\n")
+    }
+    # X <- .pseudocount(X)
+    # M <- .pseudocount(M)
+    N <- length(dim(X))
+    list(X=X, M=M, fixA=fixA, N=N)
+}
+
+.initNTF <- function(X, N, rank, init, initA, Alpha, Beta,
+    algorithm, thr, verbose){
+    T1 <- NULL
+    E <- NULL
+    if(is.null(initA)){
+        A <- list()
+        length(A) <- N
+        for (n in seq(N)) {
+            if (init == "NMF") {
+                Xn <- cs_unfold(X, m = n)@data
+                res.nmf <- NMF(Xn, J = rank, algorithm = "KL")
+                A[[n]] <- t(res.nmf$V)
+                orderA <- order(sapply(seq(rank), function(x) {
+                    norm(as.matrix(res.nmf$V[, x], "F")) * norm(as.matrix(res.nmf$U[,
+                      x]), "F")
+                }), decreasing = TRUE)
+            } else if (init == "ALS") {
+                Xn <- cs_unfold(X, m = n)@data
+                res.svd <- svd(Xn)
+                A[[n]] <- .positive(res.svd$u[seq(rank), ])
+                orderA <- order(sapply(res.svd$d[seq(rank)], function(x) {
+                    norm(as.matrix(x), "F")
+                }), decreasing = TRUE)
+            } else if (init == "Random") {
+                A[[n]] <- matrix(runif(rank * dim(X)[n]), nrow = rank,
+                    ncol = dim(X)[n])
+                orderA <- order(apply(A[[n]], 1, function(x) {
+                    norm(as.matrix(x), "F")
+                }), decreasing = TRUE)
+            }
+            A[[n]] <- A[[n]][orderA, ]
+            if (n != N) {
+                A[[n]] <- t(apply(A[[n]], 1, function(x) {
+                    x/norm(as.matrix(x), "F")
+                }))
+            }
+        }
+    }else{
+        A <- initA
+    }
+
+    RecError = c()
+    TrainRecError = c()
+    TestRecError = c()
+    RelChange = c()
+
+    RecError[1] <- thr * 10
+    TrainRecError[1] <- thr * 10
+    TestRecError[1] <- thr * 10
+    RelChange[1] <- thr * 10
+
+    if (algorithm == "HALS") {
+        T1 <- eval(parse(text=.HALSCMD8(N)))
+    }
+    if (algorithm == "Alpha-HALS" || algorithm == "Beta-HALS") {
+        X_bar <- recTensor(rep(1, length = rank), A, idx=seq(N))
+        E <- X - X_bar
+    }
+    if (algorithm == "Frobenius") {
+        Beta = 2
+        algorithm = "Beta"
+    }
+    if (algorithm == "KL") {
+        Alpha = 1
+        algorithm = "Alpha"
+    }
+    if (algorithm == "IS") {
+        Beta = 0
+        algorithm = "Beta"
+    }
+    if (algorithm == "Pearson") {
+        Alpha = 2
+        algorithm = "Alpha"
+    }
+    if (algorithm == "Hellinger") {
+        Alpha = 0.5
+        algorithm = "Alpha"
+    }
+    if (algorithm == "Neyman") {
+        Alpha = -1
+        algorithm = "Alpha"
+    }
+    if (verbose) {
+        cat("Iterative step is running...\n")
+    }
+    list(A=A, RecError=RecError, TrainRecError=TrainRecError, TestRecError=TestRecError, RelChange=RelChange, Alpha=Alpha, Beta=Beta, algorithm=algorithm, E=E, T1=T1)
 }

@@ -11,7 +11,10 @@ jNMF decompose the matrices to two low-dimensional factor matices simultaneously
 }
 \usage{
 jNMF(X, M=NULL, initW=NULL, initV=NULL, initH=NULL, fixW=FALSE, fixV=FALSE,
-  fixH=FALSE, J = 3, w=NULL, algorithm = c("Frobenius", "KL", "IS", "PLTF"),
+  fixH=FALSE,
+  L1_W=1e-10, L1_V=1e-10, L1_H=1e-10,
+  L2_W=1e-10, L2_V=1e-10, L2_H=1e-10,
+  J = 3, w=NULL, algorithm = c("Frobenius", "KL", "IS", "PLTF"),
   p=1, thr = 1e-10, num.iter = 100, viz = FALSE, figdir = NULL, verbose = FALSE)
 }
 
@@ -45,6 +48,30 @@ Whether the factor matrices Vk are updated in each iteration step
   \item{fixH}{
 Whether the factor matrices Hk are updated in each iteration step
 (Default: FALSE).
+}
+  \item{L1_W}{
+Paramter for L1 regularitation (Default: 1e-10).
+This also works as small positive constant to prevent division by zero,
+so should be set as 0.
+}
+  \item{L1_V}{
+Paramter for L1 regularitation (Default: 1e-10).
+This also works as small positive constant to prevent division by zero,
+so should be set as 0.
+}
+  \item{L1_H}{
+Paramter for L1 regularitation (Default: 1e-10).
+This also works as small positive constant to prevent division by zero,
+so should be set as 0.
+}
+  \item{L2_W}{
+Paramter for L2 regularitation (Default: 1e-10).
+}
+  \item{L2_V}{
+Paramter for L2 regularitation (Default: 1e-10).
+}
+  \item{L2_H}{
+Paramter for L2 regularitation (Default: 1e-10).
 }
   \item{J}{
 Number of low-dimension (J < N, Mk).

@@ -1,7 +1,107 @@
-siNMF <- function(X, M=NULL, initW=NULL, initH=NULL, fixW=FALSE, fixH=FALSE, J = 3, w=NULL, algorithm = c("Frobenius", "KL", "IS", "PLTF"), p=1,
+siNMF <- function(X, M=NULL, initW=NULL, initH=NULL,
+    fixW=FALSE, fixH=FALSE,
+    L1_W=1e-10, L1_H=1e-10,
+    L2_W=1e-10, L2_H=1e-10,
+    J = 3, w=NULL, algorithm = c("Frobenius", "KL", "IS", "PLTF"), p=1,
     thr = 1e-10, num.iter = 100,
     viz = FALSE, figdir = NULL, verbose = FALSE) {
     # Argument check
+    algorithm <- match.arg(algorithm)
+    chk <- .checksiNMF(X, M, initW, initH, fixW, fixH, J, w,
+        p, thr, num.iter, viz, figdir, verbose)
+    X <- chk$X
+    M <- chk$M
+    fixH <- chk$fixH
+    w <- chk$w
+    K <- chk$K
+    # Initialization of W, H
+    int <- .initsiNMF(X, initW, initH, J, p, thr, algorithm, verbose)
+    W <- int$W
+    H <- int$H
+    RecError <- int$RecError
+    TrainRecError <- int$TrainRecError
+    TestRecError <- int$TestRecError
+    RelChange <- int$RelChange
+    p <- int$p
+    iter <- 1
+    while ((RecError[iter] > thr) && (iter <= num.iter)) {
+        # Before Update W, H_k
+        X_bar <- lapply(H, function(h){
+            .recMatrix(W, h)
+        })
+        pre_Error <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
+            .recError(X[[x]], X_bar[[x]], notsqrt=TRUE)
+        }))))
+        # Update W
+        if(!fixW){
+            W_numer <- matrix(0, nrow=nrow(W), ncol=ncol(W))
+            W_denom <- matrix(0, nrow=nrow(W), ncol=ncol(W))
+            for(k in seq_len(K)){
+                W_numer <- W_numer + w[k] * (M[[k]] * X[[k]] * (M[[k]] * X_bar[[k]])^(-p)) %*% H[[k]]
+                W_denom <- W_denom + w[k] * (M[[k]] * W %*% t(H[[k]]))^(1-p) %*% H[[k]] + L1_W + L2_W * W
+            }
+            W <- .columnNorm(.positive(W * W_numer / W_denom))
+        }
+        # Update H_k
+        for(k in seq_len(K)){
+            if(!fixH[k]){
+                Hk_numer <- (t(M[[k]]*X[[k]]) * t(M[[k]]*X_bar[[k]])^(-p)) %*% W
+                Hk_denom <- t(M[[k]] * W %*% t(H[[k]]))^(1-p) %*% W + L1_H + L2_H * H[[k]]
+                H[[k]] <- H[[k]] * Hk_numer / Hk_denom
+            }
+        }
+        # After Update W, H_k
+        iter <- iter + 1
+        X_bar <- lapply(H, function(h){
+            .recMatrix(W, h)
+        })
+        RecError[iter] <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
+            .recError(X[[x]], X_bar[[x]], notsqrt=TRUE)
+        }))))
+        TrainRecError[iter] <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
+            .recError(M[[x]]*X[[x]], M[[x]]*X_bar[[x]], notsqrt=TRUE)
+        }))))
+        TestRecError[iter] <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
+            .recError((1-M[[x]])*X[[x]], (1-M[[x]])*X_bar[[x]], notsqrt=TRUE)
+        }))))
+        RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
+        if (viz && !is.null(figdir)) {
+            png(filename = paste0(figdir, "/", iter-1, ".png"))
+            .imageplot_siNMF(X, W, H)
+            dev.off()
+        }
+        if (viz && is.null(figdir)) {
+        .imageplot_siNMF(X, W, H)
+        }
+        if (verbose) {
+            cat(paste0(iter-1, " / ", num.iter, " |Previous Error - Error| / Error = ",
+                RelChange[iter], "\n"))
+        }
+        if (is.nan(RelChange[iter])) {
+            stop("NaN is generated. Please run again or change the parameters.\n")
+        }
+    }
+    if (viz && !is.null(figdir)) {
+        png(filename = paste0(figdir, "/finish.png"))
+        .imageplot_siNMF(X, W, H)
+        dev.off()
+    }
+    if (viz && is.null(figdir)) {
+        .imageplot_siNMF(X, W, H)
+    }
+    names(RecError) <- c("offset", 1:(iter-1))
+    names(TrainRecError) <- c("offset", 1:(iter-1))
+    names(TestRecError) <- c("offset", 1:(iter-1))
+    names(RelChange) <- c("offset", 1:(iter-1))
+    return(list(W = W, H = H,
+        RecError = RecError,
+        TrainRecError = TrainRecError,
+        TestRecError = TestRecError,
+        RelChange = RelChange))
+}
+
+.checksiNMF <- function(X, M, initW, initH, fixW, fixH, J, w,
+    p, thr, num.iter, viz, figdir, verbose){
     if(!is.list(X)){
         stop("input X must be specified as a list!")
     }
@@ -59,7 +159,6 @@ siNMF <- function(X, M=NULL, initW=NULL, initH=NULL, fixW=FALSE, fixH=FALSE, J =
             w <- w / sum(w)
         }
     }
-    algorithm <- match.arg(algorithm)
     if(!is.numeric(p)){
         stop("Please specify p as numeric!")
     }
@@ -78,17 +177,14 @@ siNMF <- function(X, M=NULL, initW=NULL, initH=NULL, fixW=FALSE, fixH=FALSE, J =
     if(!is.logical(verbose)){
         stop("Please specify the verbose as a logical")
     }
-
     K <- length(X)
-    lapply(seq_along(X), function(x){
-        X[[x]][which(X[[x]] == 0)] <<- 1e-10
-        M[[x]][which(M[[x]] == 0)] <<- 1e-10
-    })
+    list(X=X, M=M, w=w, fixH=fixH, K=K)
+}
 
-    # Initialization of W, H
-    if(is.null(initW)){
+.initsiNMF <- function(X, initW, initH, J, p, thr, algorithm, verbose){
+        if(is.null(initW)){
         W <- matrix(runif(nrow(X[[1]])*J), nrow=nrow(X[[1]]), ncol=J)
-        W <- .columnNorm(W * W)        
+        W <- .columnNorm(W * W)
     }else{
         W <- initW
     }
@@ -97,22 +193,18 @@ siNMF <- function(X, M=NULL, initW=NULL, initH=NULL, fixW=FALSE, fixH=FALSE, J =
             tmp <- matrix(runif(ncol(X[[x]])*J),
                 nrow=ncol(X[[x]]), ncol=J)
             .columnNorm(tmp * tmp)
-        })        
+        })
     }else{
         H <- initH
     }
-
     RecError = c()
     TrainRecError = c()
     TestRecError = c()
     RelChange = c()
-
     RecError[1] <- thr * 10
     TrainRecError[1] <- thr * 10
     TestRecError[1] <- thr * 10
     RelChange[1] <- thr * 10
-
-    iter <- 1
     # Algorithm
     if (algorithm == "Frobenius") {
         p = 0
@@ -129,93 +221,15 @@ siNMF <- function(X, M=NULL, initW=NULL, initH=NULL, fixW=FALSE, fixH=FALSE, J =
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    while ((RecError[iter] > thr) && (iter <= num.iter)) {
-        # Before Update W, H_k
-        X_bar <- lapply(H, function(h){
-            .recMatrix(W, h)
-        })
-        pre_Error <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
-            .recError(X[[x]], X_bar[[x]], notsqrt=TRUE)
-        }))))
-
-        # Update W
-        if(!fixW){            
-            W_numer <- matrix(0, nrow=nrow(W), ncol=ncol(W))
-            W_denom <- matrix(0, nrow=nrow(W), ncol=ncol(W))
-            for(k in seq_len(K)){
-                W_numer <- W_numer + w[k] * (M[[k]]*X[[k]] * (M[[k]]*X_bar[[k]])^(-p)) %*% H[[k]]
-                W_denom <- W_denom + w[k] * (M[[k]] * W %*% t(H[[k]]))^(1-p) %*% H[[k]]
-            }
-            W <- .columnNorm(.positive(W * W_numer / W_denom))
-        }
-
-        # Update H_k
-        for(k in seq_len(K)){
-            if(!fixH[k]){
-                Hk_numer <- (t(M[[k]]*X[[k]]) * t(M[[k]]*X_bar[[k]])^(-p)) %*% W
-                Hk_denom <- t(M[[k]] * W %*% t(H[[k]]))^(1-p) %*% W
-                H[[k]] <- H[[k]] * Hk_numer / Hk_denom                    
-            }
-        }
-
-        # After Update W, H_k
-        iter <- iter + 1
-        X_bar <- lapply(H, function(h){
-            .recMatrix(W, h)
-        })
-        RecError[iter] <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
-            .recError(X[[x]], X_bar[[x]], notsqrt=TRUE)
-        }))))
-
-        TrainRecError[iter] <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
-            .recError(M[[x]]*X[[x]], M[[x]]*X_bar[[x]], notsqrt=TRUE)
-        }))))
-
-        TestRecError[iter] <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
-            .recError((1-M[[x]])*X[[x]], (1-M[[x]])*X_bar[[x]], notsqrt=TRUE)
-        }))))
-
-        RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
-        if (viz && !is.null(figdir)) {
-            png(filename = paste0(figdir, "/", iter-1, ".png"))
-            .imageplot_siNMF(X, W, H)
-            dev.off()
-        }
-        if (viz && is.null(figdir)) {
-        .imageplot_siNMF(X, W, H)
-        }
-        if (verbose) {
-            cat(paste0(iter-1, " / ", num.iter, " |Previous Error - Error| / Error = ",
-                RelChange[iter], "\n"))
-        }
-        if (is.nan(RelChange[iter])) {
-            stop("NaN is generated. Please run again or change the parameters.\n")
-        }
-    }
-    if (viz && !is.null(figdir)) {
-        png(filename = paste0(figdir, "/finish.png"))
-        .imageplot_siNMF(X, W, H)
-        dev.off()
-    }
-    if (viz && is.null(figdir)) {
-        .imageplot_siNMF(X, W, H)
-    }
-    names(RecError) <- c("offset", 1:(iter-1))
-    names(TrainRecError) <- c("offset", 1:(iter-1))
-    names(TestRecError) <- c("offset", 1:(iter-1))
-    names(RelChange) <- c("offset", 1:(iter-1))
-    return(list(W = W, H = H,
-        RecError = RecError,
-        TrainRecError = TrainRecError,
-        TestRecError = TestRecError,
-        RelChange = RelChange))
+    list(W=W, H=H, RecError=RecError, TrainRecError=TrainRecError,
+        TestRecError=TestRecError, RelChange=RelChange, p=p)
 }
 
 .imageplot_siNMF <- function(X, W, H){
     l <- length(X)
     layout(rbind(seq_len(l), seq_len(l)+l))
     lapply(seq_along(X), function(x){
-        image.plot(t(X[[l]]))
+        image.plot(t(X[[x]]))
     })
     lapply(seq_along(X), function(x){
         image.plot(t(W %*% t(H[[x]])))

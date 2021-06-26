@@ -12,7 +12,8 @@ This function is also used as initialization step of tensor decomposition
 (see also NTF and NTD).
 }
 \usage{
-NMF(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE, J = 3,
+NMF(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
+  L1_U=1e-10, L1_V=1e-10, L2_U=1e-10, L2_V=1e-10, J = 3,
   rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals",
     "sparseness.basis", "sparseness.coef", "sparseness2.basis",
     "sparseness2.coef", "norm.info.gain.basis", "norm.info.gain.coef",
@@ -44,6 +45,22 @@ has M-rows and J-columns (Default: NULL).
 \item{fixV}{
 Whether the factor matrix V is updated in each iteration step
 (Default: FALSE).
+}
+  \item{L1_U}{
+Paramter for L1 regularitation (Default: 1e-10).
+This also works as small positive constant to prevent division by zero,
+so should be set as 0.
+}
+  \item{L1_V}{
+Paramter for L1 regularitation (Default: 1e-10).
+This also works as small positive constant to prevent division by zero,
+so should be set as 0.
+}
+  \item{L2_U}{
+Paramter for L2 regularitation (Default: 1e-10).
+}
+  \item{L2_V}{
+Paramter for L2 regularitation (Default: 1e-10).
 }
 \item{J}{
 The number of low-dimension (J < {N, M}). If a numerical vector is specified

@@ -11,11 +11,7 @@ GabrielNMF devides the input file into four matrices (A, B, C, and D)
 and perform cross validation by the prediction of A from the matrices B, C, and D.
 }
 \usage{
-GabrielNMF(X, J = 3, nx = 5, ny = 5,
- algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
-    "Alpha", "Beta", "PGD", "HALS", "GCD"), Alpha = 1, Beta = 2,
-    eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04,
-    num.iter = 100, verbose = FALSE)
+GabrielNMF(X, J = 3, nx = 5, ny = 5, ...)
 }
 
 \arguments{
@@ -31,35 +27,8 @@ The number of hold-out in row-wise direction (2 < nx < N).
 \item{ny}{
 The number of hold-out in row-wise direction (2 < ny < M).
 }
-\item{algorithm}{
-NMF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
-"HALS", "PGD", "Alpha", "Beta", and "GCD" are available (Default: "KL").
-}
-\item{Alpha}{
-The parameter of Alpha-divergence.
-}
-\item{Beta}{
-The parameter of Beta-divergence.
-}
-\item{eta}{
-The stepsize for PGD algorithm (Default: 0.0001).
-}
-\item{thr1}{
-When error change rate is lower than thr1, the iteration is terminated
-(Default: 1E-10).
-}
-\item{thr2}{
-If the minus-value is generated, replaced as thr2 (Default: 1E-10).
-This value is used within the internal function .positive().
-}
-\item{tol}{
-The tolerance parameter used in GCD algorithm.
-}
-\item{num.iter}{
-The number of interation step (Default: 100).
-}
-\item{verbose}{
-If verbose == TRUE, Error change rate is generated in console window.
+\item{...}{
+Other parameters for NMF function.
 }
 }
 

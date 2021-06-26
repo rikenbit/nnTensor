@@ -1,8 +1,77 @@
-NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE, J = 3, rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,
+NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
+    L1_U=1e-10, L1_V=1e-10, L2_U=1e-10, L2_V=1e-10, J = 3,
+    rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,
     algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD"), Alpha = 1, Beta = 2,
     eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04, num.iter = 100,
     viz = FALSE, figdir = NULL, verbose = FALSE){
     # Argument check
+    rank.method <- match.arg(rank.method)
+    algorithm <- match.arg(algorithm)
+    chk <- .checkNMF(X, M, initU, initV, fixU, fixV,
+        L1_U, L1_V, L2_U, L2_V, J, runtime,
+        Alpha, Beta, eta, thr1, thr2, tol, num.iter, viz, figdir, verbose)
+    M <- chk$M
+    if(length(J) != 1){
+        cat("Each rank, multiple NMF runs are performed\n")
+        out1 <- .lapply_pb(J, function(j){
+            # Original data
+            out.original <- lapply(seq_len(runtime), function(r){
+                try(.eachNMF(X, M, initU, initV, fixU, fixV, L1_U, L1_V,
+                    L2_U, L2_V, j, algorithm, Alpha, Beta, eta, thr1, thr2,
+                    tol, num.iter, viz, figdir, verbose))
+            })
+            # Rand data
+            out.random <- lapply(seq_len(runtime), function(r){
+                try(.eachNMF(.randomize(X), M, initU, initV, fixU, fixV,
+                    L1_U, L1_V, L2_U, L2_V,
+                    j, algorithm, Alpha, Beta, eta, thr1, thr2,
+                    tol, num.iter, viz, figdir, verbose))
+            })
+            list(out.original=out.original, out.random=out.random)
+        })
+        names(out1) <- paste0("Rank", J)
+        cat("Each rank estimation method\n")
+        out2 <- .lapply_pb(J, function(j, other){
+            out1 <- other$out1
+            rank.method <- other$rank.method
+            runtime <- other$runtime
+            X <- other$X
+            out.original <- eval(parse(text=paste0("out1$Rank", j, "$out.original")))
+            out.random <- eval(parse(text=paste0("out1$Rank", j, "$out.random")))
+            f <- .flist2[[rank.method]]
+            f(out.original, out.random, X, runtime)
+        }, other=list(out1=out1, rank.method=rank.method,
+            runtime=runtime, X=X))
+        names(out2) <- paste0("Rank", J)
+        out <- list(U = NULL,
+            V = NULL,
+            J = J,
+            RecError = NULL,
+            TrainRecError = NULL,
+            TestRecError = NULL,
+            RelChange = NULL,
+            Trial = out2, Runtime = runtime, RankMethod=rank.method)
+        class(out) <- "NMF"
+        out
+    }else{
+        out1 <- .eachNMF(X, M, initU, initV, fixU, fixV,
+            L1_U, L1_V, L2_U, L2_V,
+            J, algorithm, Alpha, Beta, eta, thr1, thr2, tol, num.iter,
+            viz, figdir, verbose)
+        list(U = out1$U,
+            V = out1$V,
+            J = J,
+            RecError = out1$RecError,
+            TrainRecError = out1$TrainRecError,
+            TestRecError = out1$TestRecError,
+            RelChange = out1$RelChange,
+            Trial = NULL, Runtime = NULL, RankMethod=NULL)
+    }
+}
+
+.checkNMF <- function(X, M, initU, initV, fixU, fixV,
+    L1_U, L1_V, L2_U, L2_V, J, runtime,
+    Alpha, Beta, eta, thr1, thr2, tol, num.iter, viz, figdir, verbose){
     if(!is.matrix(X)){
         stop("Please specify the X as a matrix")
     }
@@ -30,14 +99,24 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE, J = 3
     if(!is.logical(fixV)){
         stop("Please specify the fixV as a logical")
     }
+    if(L1_U < 0){
+        stop("Please specify the L1_U that larger than 0")
+    }
+    if(L1_V < 0){
+        stop("Please specify the L1_V that larger than 0")
+    }
+    if(L2_U < 0){
+        stop("Please specify the L2_U that larger than 0")
+    }
+    if(L2_V < 0){
+        stop("Please specify the L2_V that larger than 0")
+    }
     if(!is.numeric(J)){
         stop("Please specify the J as a number or a numeric vector")
     }
-    rank.method <- match.arg(rank.method)
     if(!is.numeric(runtime)){
         stop("Please specify the runtime as a numeric")
     }
-    algorithm <- match.arg(algorithm)
     if(!is.numeric(Alpha)){
         stop("Please specify the Alpha as a numeric")
     }
@@ -68,122 +147,26 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE, J = 3
     if(!is.logical(verbose)){
         stop("Please specify the verbose as a logical")
     }
-    if(length(J) != 1){
-        cat("Each rank, multiple NMF runs are performed\n")
-        out1 <- .lapply_pb(J, function(j){
-            # Original data
-            out.original <- lapply(seq_len(runtime), function(r){
-                try(.eachNMF(X, M, initU, initV, fixU, fixV, j, algorithm, Alpha, Beta, eta, thr1, thr2,
-                    tol, num.iter, viz, figdir, verbose))
-            })
-            # Rand data
-            out.random <- lapply(seq_len(runtime), function(r){
-                try(.eachNMF(.randomize(X), M, initU, initV, fixU, fixV, j, algorithm, Alpha, Beta, eta, thr1, thr2,
-                    tol, num.iter, viz, figdir, verbose))
-            })
-            list(out.original=out.original, out.random=out.random)
-        })
-        names(out1) <- paste0("Rank", J)
-
-        cat("Each rank estimation method\n")
-        out2 <- .lapply_pb(J, function(j, other){
-            out1 <- other$out1
-            rank.method <- other$rank.method
-            runtime <- other$runtime
-            X <- other$X
-            out.original <- eval(parse(text=paste0("out1$Rank", j, "$out.original")))
-            out.random <- eval(parse(text=paste0("out1$Rank", j, "$out.random")))
-            f <- .flist2[[rank.method]]
-            f(out.original, out.random, X, runtime)
-        }, other=list(out1=out1, rank.method=rank.method,
-            runtime=runtime, X=X))
-        names(out2) <- paste0("Rank", J)
-
-        out <- list(U = NULL,
-            V = NULL,
-            J = J,
-            RecError = NULL,
-            TrainRecError = NULL,
-            TestRecError = NULL,
-            RelChange = NULL,
-            Trial = out2, Runtime = runtime, RankMethod=rank.method)
-        class(out) <- "NMF"
-        out
-    }else{
-        out1 <- .eachNMF(X, M, initU, initV, fixU, fixV, J, algorithm, Alpha, Beta, eta, thr1, thr2,
-            tol, num.iter, viz, figdir, verbose)
-        list(U = out1$U,
-            V = out1$V,
-            J = J,
-            RecError = out1$RecError,
-            TrainRecError = out1$TrainRecError,
-            TestRecError = out1$TestRecError,
-            RelChange = out1$RelChange,
-            Trial = NULL, Runtime = NULL, RankMethod=NULL)
-    }
+    list(M=M)
 }
 
-.eachNMF <- function(X, M, initU, initV, fixU, fixV, J, algorithm, Alpha, Beta, eta, thr1, thr2,
+.eachNMF <- function(X, M, initU, initV, fixU, fixV, L1_U, L1_V, L2_U, L2_V,
+    J, algorithm, Alpha, Beta, eta, thr1, thr2,
     tol, num.iter, viz, figdir, verbose) {
-    X[which(X == 0)] <- 1e-10
-    M[which(M == 0)] <- 1e-10
-
     # Initialization of U, V
-    if(is.null(initU)){
-        U <- matrix(runif(nrow(X) * J), nrow = nrow(X), ncol = J)
-        U <- U * U
-    }else{
-        U <- initU
-    }
-    if(is.null(initV)){
-        V <- matrix(runif(ncol(X) * J), nrow = ncol(X), ncol = J)
-        V <- V * V
-    }else{
-        V <- initV
-    }
-
-    RecError = c()
-    TrainRecError = c()
-    TestRecError = c()
-    RelChange = c()
-
-    RecError[1] <- thr1 * 10
-    TrainRecError[1] <- thr1 * 10
-    TestRecError[1] <- thr1 * 10
-    RelChange[1] <- thr1 * 10
-
+    int <- .initNMF(X, M, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose)
+    X <- int$X
+    M <- int$M
+    U <- int$U
+    V <- int$V
+    RecError <- int$RecError
+    TrainRecError <- int$TrainRecError
+    TestRecError <- int$TestRecError
+    RelChange <- int$RelChange
+    Alpha <- int$Alpha
+    Beta <- int$Beta
+    algorithm <- int$algorithm
     iter <- 1
-
-    if (algorithm == "HALS") {
-        R <- X - U %*% t(V)
-    }
-    if (algorithm == "Frobenius") {
-        Beta = 2
-        algorithm = "Beta"
-    }
-    if (algorithm == "KL") {
-        Alpha = 1
-        algorithm = "Alpha"
-    }
-    if (algorithm == "IS") {
-        Beta = 0
-        algorithm = "Beta"
-    }
-    if (algorithm == "Pearson") {
-        Alpha = 2
-        algorithm = "Alpha"
-    }
-    if (algorithm == "Hellinger") {
-        Alpha = 0.5
-        algorithm = "Alpha"
-    }
-    if (algorithm == "Neyman") {
-        Alpha = -1
-        algorithm = "Alpha"
-    }
-    if (verbose) {
-        cat("Iterative step is running...\n")
-    }
     while ((RecError[iter] > thr1) && (iter <= num.iter)) {
         # Update U, V
         X_bar <- .recMatrix(U, V)
@@ -198,22 +181,24 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE, J = 3
         }
         else if (algorithm == "Alpha") {
             if(!fixU){
-                U <- U * ((((M * X)/(M * U %*% t(V)))^Alpha %*% V)/(matrix(1,
-                    nrow = nrow(X), ncol = 1) %*% colSums(V)))^(1/Alpha)
+                U <- U * ((((M * X)/(M * U %*% t(V)))^Alpha %*% V) /
+                    (matrix(1, nrow = nrow(X), ncol = 1) %*%
+                        colSums(V)))^(1/Alpha)
             }
             if(!fixV){
-                V <- V * ((t((M * X)/(M * U %*% t(V)))^Alpha %*% U)/(matrix(1,
-                    nrow = ncol(X), ncol = 1) %*% colSums(U)))^(1/Alpha)
+                V <- V * ((t((M * X)/(M * U %*% t(V)))^Alpha %*% U) /
+                    (matrix(1, nrow = ncol(X), ncol = 1) %*%
+                        colSums(U)))^(1/Alpha)
             }
         }
         else if (algorithm == "Beta") {
             if(!fixU){
-                U <- U * (((M * U %*% t(V))^(Beta - 2) * (M * X)) %*% V)/((M * U %*%
-                t(V))^(Beta - 1) %*% V)
+                U <- U * (((M * U %*% t(V))^(Beta - 2) * (M * X)) %*% V) /
+                ((M * U %*% t(V))^(Beta - 1) %*% V + L1_U + L2_U * U)
             }
-            if(!fixV){                
-                V <- V * (t((M * U %*% t(V))^(Beta - 2) * (M * X)) %*% U)/(t((M * U %*%
-                t(V))^(Beta - 1)) %*% U)
+            if(!fixV){
+                V <- V * (t((M * U %*% t(V))^(Beta - 2) * (M * X)) %*% U) /
+                (t((M * U %*% t(V))^(Beta - 1)) %*% U + L1_V + L2_V * V)
             }
         }
         else if (algorithm == "HALS") {
@@ -288,6 +273,68 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE, J = 3
         TestRecError = TestRecError,
         RelChange = RelChange)
 }
+
+.initNMF <- function(X, M, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose){
+    if(algorithm %in% c("HALS", "Pearson", "Hellinger", "Neyman", "Alpha")){
+        X[which(X == 0)] <- 1e-10
+        M[which(M == 0)] <- 1e-10
+    }
+    if(is.null(initU)){
+        U <- matrix(runif(nrow(X) * J), nrow = nrow(X), ncol = J)
+        U <- U * U
+    }else{
+        U <- initU
+    }
+    if(is.null(initV)){
+        V <- matrix(runif(ncol(X) * J), nrow = ncol(X), ncol = J)
+        V <- V * V
+    }else{
+        V <- initV
+    }
+    RecError = c()
+    TrainRecError = c()
+    TestRecError = c()
+    RelChange = c()
+    RecError[1] <- thr1 * 10
+    TrainRecError[1] <- thr1 * 10
+    TestRecError[1] <- thr1 * 10
+    RelChange[1] <- thr1 * 10
+    R <- NULL
+    if (algorithm == "HALS") {
+        R <- X - U %*% t(V)
+    }
+    if (algorithm == "Frobenius") {
+        Beta = 2
+        algorithm = "Beta"
+    }
+    if (algorithm == "KL") {
+        Beta = 1
+        algorithm = "Beta"
+    }
+    if (algorithm == "IS") {
+        Beta = 0
+        algorithm = "Beta"
+    }
+    if (algorithm == "Pearson") {
+        Alpha = 2
+        algorithm = "Alpha"
+    }
+    if (algorithm == "Hellinger") {
+        Alpha = 0.5
+        algorithm = "Alpha"
+    }
+    if (algorithm == "Neyman") {
+        Alpha = -1
+        algorithm = "Alpha"
+    }
+    if (verbose) {
+        cat("Iterative step is running...\n")
+    }
+    list(X=X, M=M, U=U, V=V, RecError=RecError, TrainRecError=TrainRecError,
+        TestRecError=TestRecError, RelChange=RelChange,
+        Alpha=Alpha, Beta=Beta, algorithm=algorithm)
+}
+
 
 plot <- function(x, ...){
     UseMethod("plot", x, ...)
