@@ -1,4 +1,5 @@
-NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
+NTD <- function(X, M=NULL, pseudocount=1e-10,
+    initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     L1_A=1e-10, L2_A=1e-10, rank = c(3, 3, 3), modes = 1:3,
     algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha", "Beta"), init = c("NMF", "ALS", "Random"),
     Alpha = 1, Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE,
@@ -6,10 +7,11 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     # Argument check
     algorithm <- match.arg(algorithm)
     init <- match.arg(init)
-    chk <- .checkNTD(X, M, rank, modes, initS, initA, fixS, fixA,
+    chk <- .checkNTD(X, M, pseudocount, rank, modes, initS, initA, fixS, fixA,
         Alpha, Beta, thr, num.iter, viz, figdir, verbose)
     X <- chk$X
     M <- chk$M
+    pM <- chk$pM
     fixA <- chk$fixA
     modes <- chk$modes
     N <- chk$N
@@ -29,7 +31,6 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     E <- int$E
     J_hat <- int$J_hat
     iter <- 1
-    J_hat <- NULL
     while ((RecError[iter] > thr) && (iter <= num.iter)) {
         X_bar <- recTensor(S=S, A=A, idx=modes)
         pre_Error <- .recError(X, X_bar)
@@ -42,8 +43,8 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
                       A[[x]]
                     }, simplify = FALSE))
                     Xn <- cs_unfold(X, m = n)@data
-                    Mn <- cs_unfold(M, m = n)@data
-                    numer <- S_A %*% (Mn * (Xn/t(t(A[[n]]) %*% S_A)))^Alpha
+                    pMn <- cs_unfold(pM, m = n)@data
+                    numer <- S_A %*% (pMn * (Xn/t(t(A[[n]]) %*% S_A)))^Alpha
                     denom <- t(as.matrix(rep(1, dim(X)[n]) %*% t(rowSums(S_A))))
                     A[[n]] <- A[[n]] * (numer/denom)^(1/Alpha)
                 }
@@ -53,9 +54,9 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
                       A[[x]]
                     }, simplify = FALSE))
                     Xn <- cs_unfold(X, m = n)@data
-                    Mn <- cs_unfold(M, m = n)@data
+                    pMn <- cs_unfold(pM, m = n)@data
                     Xn_bar <- cs_unfold(recTensor(S=S, A=A), m = n)@data
-                    numer <- S_A %*% ((Mn * Xn) * (Mn * Xn_bar^(Beta - 1)))
+                    numer <- S_A %*% ((pMn * Xn) * (pMn * Xn_bar^(Beta - 1)))
                     denom <- S_A %*% (t(S_A) %*% A[[n]])^Beta
                     A[[n]] <- A[[n]] * numer/(denom + L1_A + L2_A * A[[n]])
                 }
@@ -89,12 +90,12 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
         if(!fixS){
             if (algorithm == "Alpha") {
                 S <- .positive(recTensor(S=X, A=A, idx=modes, reverse = TRUE))
-                numer <- M * (X/recTensor(S=S, A=A, idx=modes))^Alpha
+                numer <- pM * (X/recTensor(S=S, A=A, idx=modes))^Alpha
                 denom <- X
                 cmd <- paste0("denom[",
                     paste(rep("", length=length(dim(X))), collapse=","), "] <- 1")
                 eval(parse(text=cmd))
-                denom <- M * denom
+                denom <- pM * denom
                 for (n in 1:N) {
                     numer <- ttm(numer, A[[n]], m = n)
                     denom <- ttm(denom, A[[n]], m = n)
@@ -103,8 +104,8 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
             }
             else if (algorithm == "Beta") {
                 X_bar <- recTensor(S=S, A=A, idx=modes)
-                numer <- M * X * X_bar^(Beta - 1)
-                denom <- M * X_bar^Beta
+                numer <- pM * X * X_bar^(Beta - 1)
+                denom <- pM * X_bar^Beta
                 for (n in 1:N) {
                     numer <- ttm(numer, A[[n]], m = n)
                     denom <- ttm(denom, A[[n]], m = n)
@@ -179,11 +180,9 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
         RelChange = RelChange))
 }
 
-.checkNTD <- function(X, M, rank, modes, initS, initA, fixS, fixA,
+.checkNTD <- function(X, M, pseudocount, rank, modes, initS, initA, fixS, fixA,
     Alpha, Beta, thr, num.iter, viz, figdir, verbose){
-    if(!is.array(X@data)){
-        stop("input X@data must be specified as a array!")
-    }
+    stopifnot(is.array(X@data))
     if(!is.null(M)){
         if(!identical(dim(X), dim(M))){
             stop("Please specify the dimensions of X and M are same")
@@ -192,6 +191,7 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
         M <- X
         M@data[] <- 1
     }
+    stopifnot(is.numeric(pseudocount))
     if(!is.null(initS)){
         dimS <- as.numeric(dim(initS)[modes])
         if(!identical(rank, dimS)){
@@ -225,32 +225,16 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     tmp <- rep(FALSE, length=length(dim(X)))
     tmp[modes] <- fixA
     fixA <- tmp
-    if(!is.numeric(rank)){
-        stop("Please specify rank as numeric vector!")
-    }
-    if(!is.numeric(modes)){
-        stop("Please specify modes as numeric vector!")
-    }
-    if(!is.numeric(Alpha)){
-        stop("Please specify Alpha as numeric!")
-    }
-    if(!is.numeric(Beta)){
-        stop("Please specify Beta as numeric!")
-    }
-    if(!is.numeric(thr)){
-        stop("Please specify thr as numeric!")
-    }
-    if(!is.numeric(num.iter)){
-        stop("Please specify num.iter as numeric!")
-    }
-    if(!is.logical(viz)){
-        stop("Please specify the viz as a logical")
-    }
+    stopifnot(is.numeric(rank))
+    stopifnot(is.numeric(modes))
+    stopifnot(is.numeric(Alpha))
+    stopifnot(is.numeric(Beta))
+    stopifnot(is.numeric(thr))
+    stopifnot(is.numeric(num.iter))
+    stopifnot(is.logical(viz))
+    stopifnot(is.logical(verbose))
     if(!is.character(figdir) && !is.null(figdir)){
         stop("Please specify the figdir as a string or NULL")
-    }
-    if(!is.logical(verbose)){
-        stop("Please specify the verbose as a logical")
     }
     if (verbose) {
         cat("Initialization step is running...\n")
@@ -260,17 +244,15 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     if(length(modes) != length(rank)){
         stop("Please the length(modes) and length(rank) as same")
     }
-    # X <- .pseudocount(X)
-    # M <- .pseudocount(M)
+    X <- .pseudocount(X, pseudocount)
+    pM <- .pseudocount(M, pseudocount)
     N <- length(dim(X))
-    list(X=X, M=M, fixA=fixA, modes=modes, N=N)
+    list(X=X,M=M, pM=pM, fixA=fixA, modes=modes, N=N)
 }
 
 .initNTD <- function(X, N, rank, modes, init, initS, initA,
     Alpha, Beta, algorithm, thr, verbose){
     A <- list()
-    E <- NULL
-    J_hat <- NULL
     length(A) <- N
     Iposition <- setdiff(seq_len(N), modes)
     rank <- .insertNULL(rank, Iposition, N)
@@ -322,6 +304,8 @@ NTD <- function(X, M=NULL, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     TrainRecError[1] <- thr * 10
     TestRecError[1] <- thr * 10
     RelChange[1] <- thr * 10
+    E <- NULL
+    J_hat <- NULL
     if (algorithm == "HALS") {
         E <- X - recTensor(S=S, A=A, idx=modes)
         eval(parse(text=.HALSCMD1(N)))

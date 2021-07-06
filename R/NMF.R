@@ -1,4 +1,5 @@
-NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
+NMF <- function(X, M=NULL, pseudocount=1e-10,
+    initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
     L1_U=1e-10, L1_V=1e-10, L2_U=1e-10, L2_V=1e-10, J = 3,
     rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,
     algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD"), Alpha = 1, Beta = 2,
@@ -7,22 +8,24 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
     # Argument check
     rank.method <- match.arg(rank.method)
     algorithm <- match.arg(algorithm)
-    chk <- .checkNMF(X, M, initU, initV, fixU, fixV,
+    chk <- .checkNMF(X, M, pseudocount, initU, initV, fixU, fixV,
         L1_U, L1_V, L2_U, L2_V, J, runtime,
         Alpha, Beta, eta, thr1, thr2, tol, num.iter, viz, figdir, verbose)
+    X <- chk$X
     M <- chk$M
+    pM <- chk$pM
     if(length(J) != 1){
         cat("Each rank, multiple NMF runs are performed\n")
         out1 <- .lapply_pb(J, function(j){
             # Original data
             out.original <- lapply(seq_len(runtime), function(r){
-                try(.eachNMF(X, M, initU, initV, fixU, fixV, L1_U, L1_V,
+                try(.eachNMF(X, M, pM, initU, initV, fixU, fixV, L1_U, L1_V,
                     L2_U, L2_V, j, algorithm, Alpha, Beta, eta, thr1, thr2,
                     tol, num.iter, viz, figdir, verbose))
             })
             # Rand data
             out.random <- lapply(seq_len(runtime), function(r){
-                try(.eachNMF(.randomize(X), M, initU, initV, fixU, fixV,
+                try(.eachNMF(.randomize(X), M, pM, initU, initV, fixU, fixV,
                     L1_U, L1_V, L2_U, L2_V,
                     j, algorithm, Alpha, Beta, eta, thr1, thr2,
                     tol, num.iter, viz, figdir, verbose))
@@ -54,7 +57,7 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
         class(out) <- "NMF"
         out
     }else{
-        out1 <- .eachNMF(X, M, initU, initV, fixU, fixV,
+        out1 <- .eachNMF(X, M, pM, initU, initV, fixU, fixV,
             L1_U, L1_V, L2_U, L2_V,
             J, algorithm, Alpha, Beta, eta, thr1, thr2, tol, num.iter,
             viz, figdir, verbose)
@@ -69,12 +72,10 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
     }
 }
 
-.checkNMF <- function(X, M, initU, initV, fixU, fixV,
+.checkNMF <- function(X, M, pseudocount, initU, initV, fixU, fixV,
     L1_U, L1_V, L2_U, L2_V, J, runtime,
     Alpha, Beta, eta, thr1, thr2, tol, num.iter, viz, figdir, verbose){
-    if(!is.matrix(X)){
-        stop("Please specify the X as a matrix")
-    }
+    stopifnot(is.matrix(X))
     if(!is.null(M)){
         if(!identical(dim(X), dim(M))){
             stop("Please specify the dimensions of X and M are same")
@@ -83,6 +84,7 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
         M <- X
         M[,] <- 1
     }
+    stopifnot(is.numeric(pseudocount))
     if(!is.null(initU)){
         if(!identical(nrow(X), nrow(initU))){
             stop("Please specify nrow(X) and nrow(initU) are same")
@@ -93,12 +95,8 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
             stop("Please specify ncol(X) and nrow(initV) are same")
         }
     }
-    if(!is.logical(fixU)){
-        stop("Please specify the fixU as a logical")
-    }
-    if(!is.logical(fixV)){
-        stop("Please specify the fixV as a logical")
-    }
+    stopifnot(is.logical(fixU))
+    stopifnot(is.logical(fixV))
     if(L1_U < 0){
         stop("Please specify the L1_U that larger than 0")
     }
@@ -111,52 +109,34 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
     if(L2_V < 0){
         stop("Please specify the L2_V that larger than 0")
     }
-    if(!is.numeric(J)){
-        stop("Please specify the J as a number or a numeric vector")
-    }
-    if(!is.numeric(runtime)){
-        stop("Please specify the runtime as a numeric")
-    }
-    if(!is.numeric(Alpha)){
-        stop("Please specify the Alpha as a numeric")
-    }
-    if(!is.numeric(Beta)){
-        stop("Please specify the Beta as a numeric")
-    }
-    if(!is.numeric(eta)){
-        stop("Please specify the eta as a numeric")
-    }
-    if(!is.numeric(thr1)){
-        stop("Please specify the thr1 as a numeric")
-    }
-    if(!is.numeric(thr2)){
-        stop("Please specify the thr2 as a numeric")
-    }
-    if(!is.numeric(tol)){
-        stop("Please specify the tol as a numeric")
-    }
-    if(!is.numeric(num.iter)){
-        stop("Please specify the num.iter as a numeric")
-    }
-    if(!is.logical(viz)){
-        stop("Please specify the viz as a logical")
-    }
+    stopifnot(is.numeric(J))
+    stopifnot(is.numeric(runtime))
+    stopifnot(is.numeric(Alpha))
+    stopifnot(is.numeric(Beta))
+    stopifnot(is.numeric(eta))
+    stopifnot(is.numeric(thr1))
+    stopifnot(is.numeric(thr2))
+    stopifnot(is.numeric(tol))
+    stopifnot(is.numeric(num.iter))
+    stopifnot(is.logical(viz))
     if(!is.character(figdir) && !is.null(figdir)){
         stop("Please specify the figdir as a string or NULL")
     }
-    if(!is.logical(verbose)){
-        stop("Please specify the verbose as a logical")
-    }
-    list(M=M)
+    stopifnot(is.logical(verbose))
+    pM <- M
+    X[which(X == 0)] <- pseudocount
+    pM[which(pM == 0)] <- pseudocount
+    list(X=X, M=M, pM=pM)
 }
 
-.eachNMF <- function(X, M, initU, initV, fixU, fixV, L1_U, L1_V, L2_U, L2_V,
+.eachNMF <- function(X, M, pM, initU, initV, fixU, fixV, L1_U, L1_V, L2_U, L2_V,
     J, algorithm, Alpha, Beta, eta, thr1, thr2,
     tol, num.iter, viz, figdir, verbose) {
     # Initialization of U, V
-    int <- .initNMF(X, M, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose)
+    int <- .initNMF(X, M, pM, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose)
     X <- int$X
     M <- int$M
+    pM <- int$pM
     U <- int$U
     V <- int$V
     RecError <- int$RecError
@@ -173,32 +153,32 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
         pre_Error <- .recError(X, X_bar)
         if (algorithm == "PGD") {
             if(!fixU){
-                U <- .positive(U - eta * (-2 * (M * X) %*% V + 2 * (M * U %*% t(V)) %*% V), thr2)                
+                U <- .positive(U - eta * (-2 * (pM * X) %*% V + 2 * (pM * U %*% t(V)) %*% V), thr2)
             }
             if(!fixV){
-                V <- .positive(V - eta * (-2 * t(M * X) %*% U + 2 * (t(M) * V %*% t(U)) %*% U), thr2)
+                V <- .positive(V - eta * (-2 * t(pM * X) %*% U + 2 * (t(pM) * V %*% t(U)) %*% U), thr2)
             }
         }
         else if (algorithm == "Alpha") {
             if(!fixU){
-                U <- U * ((((M * X)/(M * U %*% t(V)))^Alpha %*% V) /
+                U <- U * ((((pM * X)/(pM * U %*% t(V)))^Alpha %*% V) /
                     (matrix(1, nrow = nrow(X), ncol = 1) %*%
                         colSums(V)))^(1/Alpha)
             }
             if(!fixV){
-                V <- V * ((t((M * X)/(M * U %*% t(V)))^Alpha %*% U) /
+                V <- V * ((t((pM * X)/(pM * U %*% t(V)))^Alpha %*% U) /
                     (matrix(1, nrow = ncol(X), ncol = 1) %*%
                         colSums(U)))^(1/Alpha)
             }
         }
         else if (algorithm == "Beta") {
             if(!fixU){
-                U <- U * (((M * U %*% t(V))^(Beta - 2) * (M * X)) %*% V) /
-                ((M * U %*% t(V))^(Beta - 1) %*% V + L1_U + L2_U * U)
+                U <- U * (((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% V) /
+                ((pM * U %*% t(V))^(Beta - 1) %*% V + L1_U + L2_U * U)
             }
             if(!fixV){
-                V <- V * (t((M * U %*% t(V))^(Beta - 2) * (M * X)) %*% U) /
-                (t((M * U %*% t(V))^(Beta - 1)) %*% U + L1_V + L2_V * V)
+                V <- V * (t((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% U) /
+                (t((pM * U %*% t(V))^(Beta - 1)) %*% U + L1_V + L2_V * V)
             }
         }
         else if (algorithm == "HALS") {
@@ -274,11 +254,7 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
         RelChange = RelChange)
 }
 
-.initNMF <- function(X, M, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose){
-    if(algorithm %in% c("HALS", "Pearson", "Hellinger", "Neyman", "Alpha")){
-        X[which(X == 0)] <- 1e-10
-        M[which(M == 0)] <- 1e-10
-    }
+.initNMF <- function(X, M, pM, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose){
     if(is.null(initU)){
         U <- matrix(runif(nrow(X) * J), nrow = nrow(X), ncol = J)
         U <- U * U
@@ -330,7 +306,7 @@ NMF <- function(X, M=NULL, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    list(X=X, M=M, U=U, V=V, RecError=RecError, TrainRecError=TrainRecError,
+    list(X=X, M=M, pM=pM, U=U, V=V, RecError=RecError, TrainRecError=TrainRecError,
         TestRecError=TestRecError, RelChange=RelChange,
         Alpha=Alpha, Beta=Beta, algorithm=algorithm)
 }

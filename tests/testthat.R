@@ -1,5 +1,6 @@
 library("testthat")
 library("nnTensor")
+library("rTensor")
 
 options(testthat.use_colours = FALSE)
 

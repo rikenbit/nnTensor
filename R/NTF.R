@@ -1,4 +1,5 @@
-NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
+NTF <- function(X, M=NULL, pseudocount=1e-10,
+    initA=NULL, fixA=FALSE,
     L1_A=1e-10, L2_A=1e-10, rank = 3,
     algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha-HALS", "Beta-HALS", "Alpha", "Beta"), init = c("NMF", "ALS", "Random"), Alpha = 1,
     Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE, figdir = NULL,
@@ -6,10 +7,11 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
     # Argument check
     algorithm <- match.arg(algorithm)
     init <- match.arg(init)
-    chk <- .checkNTF(X, M, initA, fixA, rank, Alpha, Beta,
+    chk <- .checkNTF(X, M, pseudocount, initA, fixA, rank, Alpha, Beta,
         thr, num.iter, viz, figdir, verbose)
     X <- chk$X
     M <- chk$M
+    pM <- chk$pM
     fixA <- chk$fixA
     N <- chk$N
     # Initialization of An
@@ -36,8 +38,8 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
                 if(!fixA[n]){
                     X_bar <- recTensor(rep(1, length = rank), A, idx=seq(N))
                     A_notn <- .KhatriRao_notn(A, n)
-                    A[[n]] <- A[[n]] * (t(A_notn) %*% (cs_unfold(M*X,
-                      m = n)@data/cs_unfold(M*X_bar, m = n)@data)^Alpha)^(1/Alpha)
+                    A[[n]] <- A[[n]] * (t(A_notn) %*% (cs_unfold(pM*X,
+                      m = n)@data/cs_unfold(pM*X_bar, m = n)@data)^Alpha)^(1/Alpha)
                     if (n != N) {
                       A[[n]] <- t(apply(A[[n]], 1, function(x) {
                         x/norm(as.matrix(x), "F")
@@ -51,7 +53,7 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
             for (n in seq(N)) {
                 if(!fixA[n]){
                     A_notn <- .KhatriRao_notn(A, n)
-                    numer <- t(A_notn) %*% (cs_unfold(M*X, m = n)@data/cs_unfold(M*X_bar^(Beta - 1), m = n)@data)
+                    numer <- t(A_notn) %*% (cs_unfold(pM*X, m = n)@data/cs_unfold(pM*X_bar^(Beta - 1), m = n)@data)
                     denom <- t(A_notn) %*% cs_unfold(X_bar^(Beta),
                       m = n)@data
                     A[[n]] <- A[[n]] * numer/(denom + L1_A + L2_A * A[[n]])
@@ -168,11 +170,8 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
         iter <- iter + 1
         X_bar <- recTensor(rep(1, length = rank), A, idx=seq(N))
         RecError[iter] <- .recError(X, X_bar)
-
         TrainRecError[iter] <- .recError(M*X, M*X_bar)
-
         TestRecError[iter] <- .recError((1-M)*X, (1-M)*X_bar)
-
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
 
         if (viz && !is.null(figdir) && N == 3) {
@@ -220,11 +219,9 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
         RelChange = RelChange))
 }
 
-.checkNTF <- function(X, M, initA, fixA, rank, Alpha, Beta,
+.checkNTF <- function(X, M, pseudocount, initA, fixA, rank, Alpha, Beta,
     thr, num.iter, viz, figdir, verbose){
-    if(!is.array(X@data)){
-        stop("input X@data must be specified as a array!")
-    }
+    stopifnot(is.array(X@data))
     if(!is.null(M)){
         if(!identical(dim(X), dim(M))){
             stop("Please specify the dimensions of X and M are same")
@@ -233,6 +230,7 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
         M <- X
         M@data[] <- 1
     }
+    stopifnot(is.numeric(pseudocount))
     if(!is.null(initA)){
         dimX <- dim(X)
         ncolA <- as.vector(unlist(lapply(initA, ncol)))
@@ -251,38 +249,23 @@ NTF <- function(X, M=NULL, initA=NULL, fixA=FALSE,
     }else{
         fixA <- rep(fixA, length=length(dim(X)))
     }
-
-    if(!is.numeric(rank)){
-        stop("Please specify rank as numeric!")
-    }
-    if(!is.numeric(Alpha)){
-        stop("Please specify Alpha as numeric!")
-    }
-    if(!is.numeric(Beta)){
-        stop("Please specify Beta as numeric!")
-    }
-    if(!is.numeric(thr)){
-        stop("Please specify thr as numeric!")
-    }
-    if(!is.numeric(num.iter)){
-        stop("Please specify num.iter as numeric!")
-    }
-    if(!is.logical(viz)){
-        stop("Please specify the viz as a logical")
-    }
+    stopifnot(is.numeric(rank))
+    stopifnot(is.numeric(Alpha))
+    stopifnot(is.numeric(Beta))
+    stopifnot(is.numeric(thr))
+    stopifnot(is.numeric(num.iter))
+    stopifnot(is.logical(viz))
+    stopifnot(is.logical(verbose))
     if(!is.character(figdir) && !is.null(figdir)){
         stop("Please specify the figdir as a string or NULL")
-    }
-    if(!is.logical(verbose)){
-        stop("Please specify the verbose as a logical")
     }
     if (verbose) {
         cat("Initialization step is running...\n")
     }
-    # X <- .pseudocount(X)
-    # M <- .pseudocount(M)
+    X <- .pseudocount(X, pseudocount)
+    pM <- .pseudocount(M, pseudocount)
     N <- length(dim(X))
-    list(X=X, M=M, fixA=fixA, N=N)
+    list(X=X, M=M, pM=pM, fixA=fixA, N=N)
 }
 
 .initNTF <- function(X, N, rank, init, initA, Alpha, Beta,

@@ -1,3 +1,7 @@
+VERSION 1.1.1
+------------------------
+   o pseudocount option to avoid zero-division was added in NMF, jNMF, siNMF, NTF, and NTD
+
 VERSION 1.1.0
 ------------------------
    o Refactored some codes (e.g. check argument parts)

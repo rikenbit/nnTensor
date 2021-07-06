@@ -1,8 +1,8 @@
 Package: nnTensor
 Type: Package
 Title: Non-Negative Tensor Decomposition
-Version: 1.1.0
-Date: 2021-06-22
+Version: 1.1.1
+Date: 2021-07-06
 Authors@R: c(person("Koki", "Tsuyuzaki", role = c("aut", "cre"),
                       email = "k.t.the-answer@hotmail.co.jp"),
                person("Manabu", "Ishii", role = "aut"),

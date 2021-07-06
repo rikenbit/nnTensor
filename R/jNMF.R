@@ -1,4 +1,5 @@
-jNMF <- function(X, M=NULL, initW=NULL, initV=NULL, initH=NULL,
+jNMF <- function(X, M=NULL, pseudocount=1e-10,
+    initW=NULL, initV=NULL, initH=NULL,
     fixW=FALSE, fixV=FALSE, fixH=FALSE,
     L1_W=1e-10, L1_V=1e-10, L1_H=1e-10,
     L2_W=1e-10, L2_V=1e-10, L2_H=1e-10,
@@ -7,10 +8,12 @@ jNMF <- function(X, M=NULL, initW=NULL, initV=NULL, initH=NULL,
     viz = FALSE, figdir = NULL, verbose = FALSE) {
     # Argument check
     algorithm <- match.arg(algorithm)
-    chk <- .checkjNMF(X, M, initW, initV, initH, fixW, fixV, fixH, J, w,
+    chk <- .checkjNMF(X, M, pseudocount,
+        initW, initV, initH, fixW, fixV, fixH, J, w,
         p, thr, num.iter, viz, figdir, verbose)
     X <- chk$X
     M <- chk$M
+    pM <- chk$pM
     fixV <- chk$fixV
     fixH <- chk$fixH
     w <- chk$w
@@ -39,24 +42,24 @@ jNMF <- function(X, M=NULL, initW=NULL, initV=NULL, initH=NULL,
             W_numer <- matrix(0, nrow=nrow(W), ncol=ncol(W))
             W_denom <- matrix(0, nrow=nrow(W), ncol=ncol(W))
             for(k in seq_len(K)){
-                W_numer <- W_numer + w[k] * (M[[k]] * X[[k]] * (M[[k]] * X_bar[[k]])^(-p)) %*% H[[k]]
-                W_denom <- W_denom + w[k] * (M[[k]] * (W + V[[k]]) %*% t(H[[k]]))^(1-p) %*% H[[k]] + L1_W + L2_W * W
+                W_numer <- W_numer + w[k] * (pM[[k]] * X[[k]] * (pM[[k]] * X_bar[[k]])^(-p)) %*% H[[k]]
+                W_denom <- W_denom + w[k] * (pM[[k]] * (W + V[[k]]) %*% t(H[[k]]))^(1-p) %*% H[[k]] + L1_W + L2_W * W
             }
             W <- .columnNorm(.positive(W * W_numer / W_denom))
         }
         # Update H_k
         for(k in seq_len(K)){
             if(!fixH[k]){
-                Hk_numer <- (t(M[[k]] * X[[k]]) * t(M[[k]] * X_bar[[k]])^(-p)) %*% (W + V[[k]])
-                Hk_denom <- t(M[[k]] * (W + V[[k]]) %*% t(H[[k]]))^(1-p) %*% W + L1_H + L2_H * H[[k]]
+                Hk_numer <- (t(pM[[k]] * X[[k]]) * t(pM[[k]] * X_bar[[k]])^(-p)) %*% (W + V[[k]])
+                Hk_denom <- t(pM[[k]] * (W + V[[k]]) %*% t(H[[k]]))^(1-p) %*% W + L1_H + L2_H * H[[k]]
                 H[[k]] <- H[[k]] * Hk_numer / Hk_denom
             }
         }
         # Update V_k
         for(k in seq_len(K)){
             if(!fixV[k]){
-                Vk_numer <- (M[[k]] * X[[k]] * (M[[k]] * X_bar[[k]])^(-p)) %*% H[[k]]
-                Vk_denom <- (M[[k]] * (W + V[[k]]) %*% t(H[[k]]))^(1-p) %*% H[[k]] + L1_V + L2_V * V[[k]]
+                Vk_numer <- (pM[[k]] * X[[k]] * (pM[[k]] * X_bar[[k]])^(-p)) %*% H[[k]]
+                Vk_denom <- (pM[[k]] * (W + V[[k]]) %*% t(H[[k]]))^(1-p) %*% H[[k]] + L1_V + L2_V * V[[k]]
                 V[[k]] <- V[[k]] * Vk_numer / Vk_denom
             }
         }
@@ -110,11 +113,9 @@ jNMF <- function(X, M=NULL, initW=NULL, initV=NULL, initH=NULL,
         RelChange = RelChange))
 }
 
-.checkjNMF <- function(X, M, initW, initV, initH, fixW, fixV, fixH, J, w,
+.checkjNMF <- function(X, M, pseudocount, initW, initV, initH, fixW, fixV, fixH, J, w,
     p, thr, num.iter, viz, figdir, verbose){
-    if(!is.list(X)){
-        stop("input X must be specified as a list!")
-    }
+    stopifnot(is.list(X))
     if(length(X) < 2){
         stop("input list X must have at least two datasets!")
     }
@@ -130,6 +131,7 @@ jNMF <- function(X, M=NULL, initW=NULL, initV=NULL, initH=NULL,
             M[[i]][] <- 1
         }
     }
+    stopifnot(is.numeric(pseudocount))
     if(!is.null(initW)){
         if(!identical(nrow(X[[1]]), nrow(initW))){
             stop("Please specify nrow(X[[k]]) and nrow(W) are same")
@@ -149,9 +151,7 @@ jNMF <- function(X, M=NULL, initW=NULL, initV=NULL, initH=NULL,
             stop("Please specify all the ncol(initH[[k]]) are same as ncol(X[[k]]) (k=1,2,...)")
         }
     }
-    if(!is.logical(fixW)){
-        stop("Please specify the fixW as a logical")
-    }
+    stopifnot(is.logical(fixW))
     if(!is.logical(fixV)){
         if(!is.vector(fixV)){
             stop("Please specify the fixV as a logical or a logical vector such as c(TRUE, FALSE, TRUE)")
@@ -174,9 +174,7 @@ jNMF <- function(X, M=NULL, initW=NULL, initV=NULL, initH=NULL,
     }else{
         fixH <- rep(fixH, length=length(X))
     }
-    if(!is.numeric(J)){
-        stop("Please specify the J as a number")
-    }
+    stopifnot(is.numeric(J))
     if(is.null(w)){
         w <- rep(1, length=length(X))
     }else{
@@ -186,26 +184,21 @@ jNMF <- function(X, M=NULL, initW=NULL, initV=NULL, initH=NULL,
             w <- w / sum(w)
         }
     }
-    if(!is.numeric(p)){
-        stop("Please specify the p as a number")
-    }
-    if(!is.numeric(thr)){
-        stop("Please specify the thr as a number")
-    }
-    if(!is.numeric(num.iter)){
-        stop("Please specify the num.iter as a number")
-    }
-    if(!is.logical(viz)){
-        stop("Please specify the viz as a logical")
-    }
+    stopifnot(is.numeric(p))
+    stopifnot(is.numeric(thr))
+    stopifnot(is.numeric(num.iter))
+    stopifnot(is.logical(viz))
+    stopifnot(is.logical(verbose))
     if(!is.character(figdir) && !is.null(figdir)){
         stop("Please specify the figdir as a string or NULL")
     }
-    if(!is.logical(verbose)){
-        stop("Please specify the verbose as a logical")
-    }
+    pM <- M
+    lapply(seq_along(X), function(x){
+         X[[x]][which(X[[x]] == 0)] <<- pseudocount
+         pM[[x]][which(pM[[x]] == 0)] <<- pseudocount
+     })
     K <- length(X)
-    list(X=X, M=M, fixV=fixV, fixH=fixH, w=w, K=K)
+    list(X=X, M=M, pM=pM, fixV=fixV, fixH=fixH, w=w, K=K)
 }
 
 .initjNMF <- function(X, initW, initV, initH, J, p, thr, algorithm, verbose){
