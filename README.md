@@ -20,8 +20,9 @@ References
 - **Nonnegative Hebbian Rule (NHR)**
 - **Ding-Ti-Peg-Park (DTPP) algorithm**
 - **(Column vector-wise) Orthogonal NMF**
-- **(Column vector-wise) Orthogonality-regularized NMF**
   - Algorithms for Orthogonal Nonnegative Matrix Factorization, Seungjin Choi, 2008
+- **(Column vector-wise) Orthogonality-regularized NMF**
+  - Orthogonal matrix factorization enables integrative analysis of multiple RNA binding proteins, Martin Stražar, Marinka Žitnik, Blaž Zupan, Jernej Ule, Tomaž Curk, Bioinformatics, 15;32(10):1527-35, 2016
 - **Simultaneous Non-negative Matrix Factorization (siNMF)** : Extracting Gene Expression Profiles Common to Colon and Pancreatic Adenocarcinoma using Simultaneous nonnegative matrix factorization, Liviu Badea, Pacific Symposium on Biocomputing, 13:279-290, 2009, Discovery of multi-dimensional modules by integrative analysis of cancer genomic data. Shihua Zhang, et al., Nucleic Acids Research, 40(19), 9379-9391, 2012, Probabilistic Latent Tensor Factorization, International Conference on Latent Variable Analysis and Signal Separation, Y. Kenan Yilmaz et al., 346-353, 2010
 - **Joint Non-negative Matrix Factorization (jNMF)** : A non-negative matrix factorization method for detecting modules in heterogeneous omics multi-modal data, Zi Yang, et al., Bioinformatics, 32(1), 1-8, 2016
 - **Non-negative CP Decomposition (NTF)**
