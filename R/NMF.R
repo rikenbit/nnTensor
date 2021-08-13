@@ -2,7 +2,7 @@ NMF <- function(X, M=NULL, pseudocount=1e-10,
     initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
     L1_U=1e-10, L1_V=1e-10, L2_U=1e-10, L2_V=1e-10, J = 3,
     rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,
-    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD"), Alpha = 1, Beta = 2,
+    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", "OrthReg"), Alpha = 1, Beta = 2,
     eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04, num.iter = 100,
     viz = FALSE, figdir = NULL, verbose = FALSE){
     # Argument check
@@ -199,11 +199,58 @@ NMF <- function(X, M=NULL, pseudocount=1e-10,
         else if (algorithm == "GCD") {
             if(!fixU){
                 Unew <- .doiter(U, V, X, tol = tol, J)
-                U <- U + Unew                
+                U <- U + Unew
             }
             if(!fixV){
                 Vnew <- .doiter(V, U, t(X), tol = tol, J)
-                V <- V + Vnew                
+                V <- V + Vnew
+            }
+        }
+        else if (algorithm == "Projected") {
+            pX <- pM * X
+            if(!fixU){
+                U <- U * (pX %*% t(pX) %*% U) / ((U %*% t(U) %*% pX %*% t(pX) %*% U)
+                    + (pX %*% t(pX) %*% U %*% t(U) %*% U))
+            }
+            if(!fixV){
+                V <- t(pX) %*% U
+            }
+        }
+        else if (algorithm == "NHR") {
+            pX <- pM * X
+            if(!fixU){
+                U <- U * (pX %*% t(pX) %*% U) / ((U %*% t(U) %*% pX %*% t(pX) %*% U))
+            }
+            if(!fixV){
+                V <- t(pX) %*% U
+            }
+        }
+
+        else if (algorithm == "DTPP") {
+            pX <- pM * X
+            if(!fixU){
+                U <- U * sqrt((pX %*% V) / (U %*% t(U) %*% pX %*% V))
+            }
+            if(!fixV){
+                V <- t(t(V) * (t(U) %*% pX) / (t(U) %*% (pM * (U %*% t(V)))))
+            }
+        }
+        else if (algorithm == "Orthogonal") {
+            pX <- pM * X
+            if(!fixU){
+                U <- U * ((pX %*% V) / ((pM * (U %*% t(V))) %*% t(pX) %*% U))
+            }
+            if(!fixV){
+                V <- t(t(V) * (t(U) %*% pX) / (t(U) %*% (pM * (U %*% t(V)))))
+            }
+        }
+        else if (algorithm == "OrthReg") {
+            pX <- pM * X
+            if(!fixU){
+                U <- U * sqrt((pX %*% V + L2_U * U) / (U %*% t(V) %*% V + 2 * L2_U * U %*% t(U) %*% U))
+            }
+            if(!fixV){
+                V <- V * sqrt((t(pX) %*% U) / (V %*% t(U) %*% U))
             }
         }
         else {

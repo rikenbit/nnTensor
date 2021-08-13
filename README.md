@@ -16,6 +16,12 @@ devtools::install_github("rikenbit/nnTensor")
 References
 ======
 - **Non-negative Matrix Factorization (NMF)** : Nonnegative Matrix and Tensor Factorizations, Andrzej CICHOCK, et. al., 2009, A Study on Efficient Algorithms for Nonnegative Matrix/Tensor Factorization, Keigo Kimura, 2017
+- **Projected NMF**
+- **Nonnegative Hebbian Rule (NHR)**
+- **Ding-Ti-Peg-Park (DTPP) algorithm**
+- **(Column vector-wise) Orthogonal NMF**
+- **(Column vector-wise) Orthogonality-regularized NMF**
+  - Algorithms for Orthogonal Nonnegative Matrix Factorization, Seungjin Choi, 2008
 - **Simultaneous Non-negative Matrix Factorization (siNMF)** : Extracting Gene Expression Profiles Common to Colon and Pancreatic Adenocarcinoma using Simultaneous nonnegative matrix factorization, Liviu Badea, Pacific Symposium on Biocomputing, 13:279-290, 2009, Discovery of multi-dimensional modules by integrative analysis of cancer genomic data. Shihua Zhang, et al., Nucleic Acids Research, 40(19), 9379-9391, 2012, Probabilistic Latent Tensor Factorization, International Conference on Latent Variable Analysis and Signal Separation, Y. Kenan Yilmaz et al., 346-353, 2010
 - **Joint Non-negative Matrix Factorization (jNMF)** : A non-negative matrix factorization method for detecting modules in heterogeneous omics multi-modal data, Zi Yang, et al., Bioinformatics, 32(1), 1-8, 2016
 - **Non-negative CP Decomposition (NTF)**

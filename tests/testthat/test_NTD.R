@@ -14,6 +14,8 @@ out6 <- NTD(X, rank=c(1,2,3), algorithm="Neyman", num.iter=2)
 out7 <- NTD(X, rank=c(1,2,3), algorithm="Alpha", num.iter=2)
 out8 <- NTD(X, rank=c(1,2,3), algorithm="Beta", num.iter=2)
 out9 <- NTD(X, rank=c(1,2,3), algorithm="HALS", num.iter=2)
+out10 <- NTD(X, rank=c(1,2,3), algorithm="NMF",
+	init = "Random", nmf.algorithm="Projected", num.iter=2, num.iter2=2)
 
 out_NTD2_1 <- NTD(X, rank=c(2,3), modes=1:2, algorithm="Frobenius", num.iter=2)
 out_NTD2_2 <- NTD(X, rank=c(3,4), modes=2:3, algorithm="Frobenius", num.iter=2)
@@ -34,6 +36,7 @@ expect_equivalent(length(out6), 6)
 expect_equivalent(length(out7), 6)
 expect_equivalent(length(out8), 6)
 expect_equivalent(length(out9), 6)
+expect_equivalent(length(out10), 6)
 
 expect_equivalent(length(out_NTD2_1), 6)
 expect_equivalent(length(out_NTD2_2), 6)

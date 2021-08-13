@@ -11,13 +11,15 @@ NTD decompose the tensor to the dense core tensor (S) and low-dimensional
 factor matices (A).
 }
 \usage{
-NTD(X, M=NULL, pseudocount=1e-10, initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
-  L1_A=1e-10, L2_A=1e-10,
-  rank = c(3, 3, 3), modes = 1:3,
-  algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger",
-    "Neyman", "HALS", "Alpha", "Beta"), init = c("NMF", "ALS", "Random"),
+NTD(X, M=NULL, pseudocount=1e-10, initS=NULL, initA=NULL, fixS=FALSE,
+  fixA=FALSE, L1_A=1e-10, L2_A=1e-10, rank = c(3, 3, 3), modes = 1:3,
+  algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
+    "HALS", "Alpha", "Beta", "NMF"), init = c("NMF", "ALS", "Random"),
+  nmf.algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger",
+  "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD", "Projected", "NHR",
+  "DTPP", "Orthogonal", "OrthReg"),
   Alpha = 1,
-  Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE,
+  Beta = 2, thr = 1e-10, num.iter = 100, num.iter2 = 10, viz = FALSE,
   figdir = NULL, verbose = FALSE)
 }
 
@@ -65,7 +67,11 @@ The vector of the modes on whih to perform the decomposition
 }
   \item{algorithm}{
 NTD algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
-"HALS", "Alpha", and "Beta" are available (Default: "Frobenius").
+"HALS", "Alpha", "Beta", "NMF" are available (Default: "Frobenius").
+}
+  \item{nmf.algorithm}{
+NMF algorithms, when the algorithm is "NMF".
+Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", are "OrthReg" are available (Default: "Frobenius").
 }
   \item{init}{
 The initialization algorithms. "NMF", "ALS", and "Random" are available
@@ -83,6 +89,9 @@ When error change rate is lower than thr1, the iteration is terminated
 }
   \item{num.iter}{
 The number of interation step (Default: 100).
+}
+  \item{num.iter2}{
+The number of NMF interation step, when the algorithm is "NMF" (Default: 10).
 }
   \item{viz}{
 If viz == TRUE, internal reconstructed tensor can be visualized.

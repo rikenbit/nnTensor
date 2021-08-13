@@ -28,6 +28,16 @@ out10 <- NMF(X, initU=initU,
 	J=3, algorithm="PGD", num.iter=2)
 out11 <- NMF(X, initU=initU,
 	J=3, algorithm="GCD", num.iter=2)
+out12 <- NMF(X, initU=initU,
+	J=3, algorithm="Projected", num.iter=2)
+out13 <- NMF(X, initU=initU,
+	J=3, algorithm="NHR", num.iter=2)
+out14 <- NMF(X, initU=initU,
+	J=3, algorithm="DTPP", num.iter=2)
+out15 <- NMF(X, initU=initU,
+	J=3, algorithm="Orthogonal", num.iter=2)
+out16 <- NMF(X, initU=initU,
+	J=3, algorithm="OrthReg", num.iter=2)
 
 expect_equivalent(length(out1), 10)
 expect_equivalent(length(out2), 10)
@@ -40,6 +50,11 @@ expect_equivalent(length(out8), 10)
 expect_equivalent(length(out9), 10)
 expect_equivalent(length(out10), 10)
 expect_equivalent(length(out11), 10)
+expect_equivalent(length(out12), 10)
+expect_equivalent(length(out13), 10)
+expect_equivalent(length(out14), 10)
+expect_equivalent(length(out15), 10)
+expect_equivalent(length(out16), 10)
 
 #
 # initV
@@ -69,6 +84,16 @@ out21 <- NMF(X, initV=initV,
 	J=3, algorithm="PGD", num.iter=2)
 out22 <- NMF(X, initV=initV,
 	J=3, algorithm="GCD", num.iter=2)
+out23 <- NMF(X, initV=initV,
+	J=3, algorithm="Projected", num.iter=2)
+out24 <- NMF(X, initV=initV,
+	J=3, algorithm="NHR", num.iter=2)
+out25 <- NMF(X, initV=initV,
+	J=3, algorithm="DTPP", num.iter=2)
+out26 <- NMF(X, initV=initV,
+	J=3, algorithm="Orthogonal", num.iter=2)
+out27 <- NMF(X, initV=initV,
+	J=3, algorithm="OrthReg", num.iter=2)
 
 expect_equivalent(length(out12), 10)
 expect_equivalent(length(out13), 10)
@@ -81,3 +106,8 @@ expect_equivalent(length(out19), 10)
 expect_equivalent(length(out20), 10)
 expect_equivalent(length(out21), 10)
 expect_equivalent(length(out22), 10)
+expect_equivalent(length(out23), 10)
+expect_equivalent(length(out24), 10)
+expect_equivalent(length(out25), 10)
+expect_equivalent(length(out26), 10)
+expect_equivalent(length(out27), 10)

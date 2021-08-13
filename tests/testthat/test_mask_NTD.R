@@ -15,6 +15,8 @@ out5 <- NTD(X, M=M, rank=c(1,2,3), algorithm="Hellinger", num.iter=2)
 out6 <- NTD(X, M=M, rank=c(1,2,3), algorithm="Neyman", num.iter=2)
 out7 <- NTD(X, M=M, rank=c(1,2,3), algorithm="Alpha", num.iter=2)
 out8 <- NTD(X, M=M, rank=c(1,2,3), algorithm="Beta", num.iter=2)
+out9 <- NTD(X, M=M, rank=c(1,2,3), algorithm="NMF",
+	nmf.algorithm="Frobenius", num.iter=3, num.iter2=2)
 
 expect_equivalent(length(out1_1), 6)
 expect_equivalent(length(out1_2), 6)
@@ -26,3 +28,4 @@ expect_equivalent(length(out5), 6)
 expect_equivalent(length(out6), 6)
 expect_equivalent(length(out7), 6)
 expect_equivalent(length(out8), 6)
+expect_equivalent(length(out9), 6)

@@ -30,6 +30,9 @@ out8 <- NTD(X, initS=initS,
 	rank=c(1,2,3), algorithm="Beta", num.iter=2)
 out9 <- NTD(X, initS=initS,
 	rank=c(1,2,3), algorithm="HALS", num.iter=2)
+out10 <- NTD(X, initS=initS,
+	rank=c(1,2,3), algorithm="NMF",
+	nmf.algorithm="Frobenius", num.iter=3, num.iter2=2)
 
 expect_equivalent(length(out1_1), 6)
 expect_equivalent(length(out1_2), 6)
@@ -42,6 +45,7 @@ expect_equivalent(length(out6), 6)
 expect_equivalent(length(out7), 6)
 expect_equivalent(length(out8), 6)
 expect_equivalent(length(out9), 6)
+expect_equivalent(length(out10), 6)
 
 #
 # initS (NTD2)
@@ -118,6 +122,9 @@ out8 <- NTD(X, initA=initA,
 	rank=c(1,2,3), algorithm="Beta", num.iter=2)
 out9 <- NTD(X, initA=initA,
 	rank=c(1,2,3), algorithm="HALS", num.iter=2)
+out10 <- NTD(X, initA=initA,
+	rank=c(1,2,3), algorithm="NMF",
+	nmf.algorithm="Frobenius", num.iter=3, num.iter2=2)
 
 expect_equivalent(length(out1_1), 6)
 expect_equivalent(length(out1_2), 6)
@@ -130,6 +137,7 @@ expect_equivalent(length(out6), 6)
 expect_equivalent(length(out7), 6)
 expect_equivalent(length(out8), 6)
 expect_equivalent(length(out9), 6)
+expect_equivalent(length(out10), 6)
 
 #
 # initA (NTD2)

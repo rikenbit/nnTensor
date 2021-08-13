@@ -1,8 +1,10 @@
 NTD <- function(X, M=NULL, pseudocount=1e-10,
     initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     L1_A=1e-10, L2_A=1e-10, rank = c(3, 3, 3), modes = 1:3,
-    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha", "Beta"), init = c("NMF", "ALS", "Random"),
-    Alpha = 1, Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE,
+    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha", "Beta", "NMF"), init = c("NMF", "ALS", "Random"),
+    nmf.algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", "OrthReg"),
+    Alpha = 1, Beta = 2, thr = 1e-10, num.iter = 100,
+    num.iter2 = 10, viz = FALSE,
     figdir = NULL, verbose = FALSE){
     # Argument check
     algorithm <- match.arg(algorithm)
@@ -47,8 +49,7 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
                     numer <- S_A %*% (pMn * (Xn/t(t(A[[n]]) %*% S_A)))^Alpha
                     denom <- t(as.matrix(rep(1, dim(X)[n]) %*% t(rowSums(S_A))))
                     A[[n]] <- A[[n]] * (numer/denom)^(1/Alpha)
-                }
-                else if (algorithm == "Beta") {
+                }else if (algorithm == "Beta") {
                     S_A <- t(cs_unfold(S, m = n)@data) %*% kronecker_list(sapply(rev(setdiff(1:N,
                       n)), function(x) {
                       A[[x]]
@@ -59,8 +60,7 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
                     numer <- S_A %*% ((pMn * Xn) * (pMn * Xn_bar^(Beta - 1)))
                     denom <- S_A %*% (t(S_A) %*% A[[n]])^Beta
                     A[[n]] <- A[[n]] * numer/(denom + L1_A + L2_A * A[[n]])
-                }
-                else if (algorithm == "HALS") {
+                }else if (algorithm == "HALS") {
                     X_bar <- recTensor(S=S, A=A, idx = setdiff(1:N, n))
                     for (jn in 1:nrow(A[[n]])) {
                       X_barkn <- .slice(X_bar, mode = n, column = jn)
@@ -71,6 +71,16 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
                         ] - ajn), m = n)
                       A[[n]][jn, ] <- ajn / norm(as.matrix(ajn), "F")
                     }
+                }else if(algorithm == "NMF"){
+                    Xn <- t(cs_unfold(X, m = n)@data)
+                    pMn <- t(cs_unfold(pM, m = n)@data)
+                    A[[n]] <- t(NMF(X=Xn, M=pMn,
+                        initU=t(A[[n]]),
+                        pseudocount=pseudocount, fixU=fixA[n],
+                        L1_U=L1_A, L2_U=L2_A,
+                        J=rank[n], algorithm=nmf.algorithm,
+                        Alpha=Alpha, Beta=Beta,
+                        num.iter=num.iter2, verbose=verbose)$U)
                 }else{
                     stop("Please specify the appropriate algorithm\n")
                 }
@@ -88,7 +98,7 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
         # Update Core tensor
         #
         if(!fixS){
-            if (algorithm == "Alpha") {
+            if (algorithm == "Alpha"){
                 S <- .positive(recTensor(S=X, A=A, idx=modes, reverse = TRUE))
                 numer <- pM * (X/recTensor(S=S, A=A, idx=modes))^Alpha
                 denom <- X
@@ -101,8 +111,7 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
                     denom <- ttm(denom, A[[n]], m = n)
                 }
                 S <- S * (numer/denom)^(1/Alpha)
-            }
-            else if (algorithm == "Beta") {
+            }else if (algorithm %in% c("Beta", "NMF")){
                 X_bar <- recTensor(S=S, A=A, idx=modes)
                 numer <- pM * X * X_bar^(Beta - 1)
                 denom <- pM * X_bar^Beta
@@ -111,8 +120,7 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
                     denom <- ttm(denom, A[[n]], m = n)
                 }
                 S <- S * numer/denom
-            }
-            else if (algorithm == "HALS") {
+            }else if (algorithm == "HALS"){
                 for (j_ijk in 1:length(J_hat)) {
                     eval(parse(text=.HALSCMD2(N)))
                     eval(parse(text=.HALSCMD3(N)))
@@ -121,12 +129,10 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
                     eval(parse(text=.HALSCMD6(N)))
                     eval(parse(text=.HALSCMD7(N)))
                 }
-            }
-            else {
+            }else{
                 stop("Please specify the appropriate algorithm\n")
             }
         }
-
         # NaN
         for (n in modes) {
             if (any(is.infinite(A[[n]])) || any(is.nan(A[[n]]))) {
@@ -333,6 +339,9 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
     if (algorithm == "Neyman") {
         Alpha = -1
         algorithm = "Alpha"
+    }
+    if(algorithm == "NMF"){
+        Beta = 2
     }
     if (verbose) {
         cat("Iterative step is running...\n")
