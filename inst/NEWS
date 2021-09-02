@@ -1,4 +1,8 @@
-VERSION 1.1.3
+VERSION 1.1.5
+------------------------
+   o thr option was added in plotTensor3D.
+
+VERSION 1.1.4
 ------------------------
    o Projected NMF ("Projected"), Nonnegative Hebbian Rule (NHR) ("NHR"), Ding-Ti-Peg-Park (DTPP) algorithm ("DTPP"), (Column vector-wise) Orthogonal NMF ("Orthogonal"), and (Column vector-wise) Orthogonality-regularized NMF ("OrthReg") were added in NMF.
    o Algorithm "NMF" is introduced in each iteration of NTD.
