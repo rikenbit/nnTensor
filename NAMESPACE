@@ -6,7 +6,7 @@ import(ggplot2)
 
 importFrom(grDevices, dev.off, png)
 importFrom(methods, is)
-importFrom(stats, runif, sd, rpois)
+importFrom(stats, runif, sd, rpois, median)
 importFrom(graphics, layout)
 importFrom("stats", "as.dist", "cophenetic", "cor", "hclust")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
@@ -17,6 +17,7 @@ export(
     siNMF,
     jNMF,
     plotTensor3D,
+    plotTensor2D,
     recTensor,
     NTD,
     NTF,

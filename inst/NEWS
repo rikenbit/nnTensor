@@ -1,6 +1,7 @@
 VERSION 1.1.5
 ------------------------
-   o thr option was added in plotTensor3D.
+   o method, sign, and option were added in plotTensor3D.
+   o plotTensor2D was added
 
 VERSION 1.1.4
 ------------------------

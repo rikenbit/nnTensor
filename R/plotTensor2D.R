@@ -1,4 +1,4 @@
-plotTensor3D <- function(X = NULL, method=c("sd", "mad"),
+plotTensor2D <- function(X = NULL, method=c("sd", "mad"),
     sign=c("positive", "negative", "both"), thr=2){
     # Argument check
     method <- match.arg(method)
@@ -8,7 +8,7 @@ plotTensor3D <- function(X = NULL, method=c("sd", "mad"),
         X <- as.tensor(X)
     }
     # Setting
-    coordinate <- expand.grid(1:dim(X)[1], 1:dim(X)[2], 1:dim(X)[3])
+    coordinate <- expand.grid(1:dim(X)[1], 1:dim(X)[2])
     allpoints <- vec(X)
     # Color value
     # SD
@@ -42,6 +42,6 @@ plotTensor3D <- function(X = NULL, method=c("sd", "mad"),
     col <- rep(0, length=length(allpoints))
     col[usingpoints] <- 6
     # Plot
-    scatter3D(coordinate[,1], coordinate[,2], coordinate[,3], colvar=NULL,
-        col=col, bty = "g", colkey = FALSE, pch=16)
+    scatter2D(coordinate[,1], coordinate[,2],
+        col=col, bty = "g", colkey = FALSE, pch=15)
 }
