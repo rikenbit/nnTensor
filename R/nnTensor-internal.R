@@ -328,7 +328,7 @@
 .errorPosition <- function(recerror){
     runtime <- length(recerror)
     unlist(lapply(seq_len(runtime), function(x, recerror){
-            if(class(recerror[x]) == "try-error"){
+            if(inherits(recerror[x], "try-error")){
                 x
             }
         }, recerror=recerror))

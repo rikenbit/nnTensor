@@ -1,3 +1,8 @@
+VERSION 1.1.6
+------------------------
+   o Bug with NTF() with rank=1 was fixed
+   o KFoldMaskTensor to generate mask tensors for K-fold cross validation was added
+
 VERSION 1.1.5
 ------------------------
    o method, sign, and option were added in plotTensor3D.

@@ -284,10 +284,18 @@ NTF <- function(X, M=NULL, pseudocount=1e-10,
                     norm(as.matrix(res.nmf$V[, x], "F")) * norm(as.matrix(res.nmf$U[,
                       x]), "F")
                 }), decreasing = TRUE)
+                if(rank != 1){
+                    A[[n]] <- A[[n]][orderA, ]
+                }
             } else if (init == "ALS") {
                 Xn <- cs_unfold(X, m = n)@data
                 res.svd <- svd(Xn)
-                A[[n]] <- .positive(res.svd$u[seq(rank), ])
+                tmpA <- .positive(res.svd$u[seq(rank), ])
+                if(rank == 1){
+                    A[[n]] <- t(tmpA)
+                }else{
+                    A[[n]] <- tmpA
+                }
                 orderA <- order(sapply(res.svd$d[seq(rank)], function(x) {
                     norm(as.matrix(x), "F")
                 }), decreasing = TRUE)
@@ -298,7 +306,6 @@ NTF <- function(X, M=NULL, pseudocount=1e-10,
                     norm(as.matrix(x), "F")
                 }), decreasing = TRUE)
             }
-            A[[n]] <- A[[n]][orderA, ]
             if (n != N) {
                 A[[n]] <- t(apply(A[[n]], 1, function(x) {
                     x/norm(as.matrix(x), "F")

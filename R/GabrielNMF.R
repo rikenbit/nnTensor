@@ -12,7 +12,7 @@ GabrielNMF <- function(X, J=3, nx = 5, ny = 5, ...){
         M[, ] <- 1
         M[xholdouts[[x]], yholdouts[[x]]] <- 0
         out <- try(.eachGabrielNMF(X, M, J, ...))
-        if(class(out) != "try-error"){
+        if(!inherits(out, "try-error")){
             TestRecError[tcount] <- out
         }else{
             TestRecError[tcount] <- NA

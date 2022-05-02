@@ -6,7 +6,7 @@
 Plot function for visualization of matrix data structure
 }
 \description{
-Combined with recTensor function and the result of NTF or NTD, the reconstructed tesor structure can be visullized.
+Combined with recTensor function and the result of NTF or NTD, the reconstructed tensor structure can be visullized.
 }
 \usage{
 plotTensor2D(X = NULL, method=c("sd", "mad"),

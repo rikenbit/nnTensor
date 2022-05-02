@@ -15,4 +15,3 @@ out2 <- recTensor(S, t_A, reverse=TRUE)
 
 expect_equivalent(dim(out1), c(4,5,6))
 expect_equivalent(dim(out2), c(4,5,6))
-

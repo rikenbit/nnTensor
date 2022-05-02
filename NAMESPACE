@@ -22,7 +22,8 @@ export(
     NTD,
     NTF,
     plot.NMF,
-    GabrielNMF
+    GabrielNMF,
+    kFoldMaskTensor
 	)
 
 S3method(plot, NMF)
