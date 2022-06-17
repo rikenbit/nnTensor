@@ -534,3 +534,16 @@
     tmp <- paste0("(A[[", seq(N), "]] %*% t(A[[", seq(N), "]]))")
     paste(tmp, collapse=" * ")
 }
+
+.rho <- function(Beta){
+    if(Beta < 1){
+        rho_beta <- 1 / (2 - Beta)
+    }
+    if((1 <= Beta) && (Beta <= 2)){
+        rho_beta <- 1
+    }
+    if(Beta > 2){
+        rho_beta <- 1 / (Beta - 1)
+    }
+    rho_beta
+}

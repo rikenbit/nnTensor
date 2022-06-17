@@ -1,3 +1,7 @@
+VERSION 1.1.7
+------------------------
+   o Exponent term depending on Beta parameter was added in NMF, siNMF, jNMF, NTF, and NTD
+
 VERSION 1.1.6
 ------------------------
    o Bug with NTF() with rank=1 was fixed

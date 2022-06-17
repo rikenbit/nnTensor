@@ -45,6 +45,8 @@ References
 	- Patrik O. Hoyer (2004). Non-negative Matrix Factorization with Sparseness Constraints. Journal of Machine Learning 5
 	- N. Fujita et al., (2018) Biomarker discovery by integrated joint non-negative matrix factorization and pathway signature analyses, Scientific Report
 	- Art B. Owen et. al., (2009). Bi-Cross-Validation of the SVD and the Nonnegative Matrix Factorization. The Annals of Applied Statistics
+- **Exponent term depending on Beta parameter**
+  - M. Nakano et al., (2010). Convergence-guaranteed multiplicative algorithms for nonnegative matrix factorization with Beta-divergence. IEEE Workshop on Machine Learning for Signal Processing
 
 ## License
 Copyright (c) 2018 Koki Tsuyuzaki and Laboratory for Bioinformatics Research, RIKEN Center for Biosystems Dynamics Reseach

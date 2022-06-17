@@ -59,7 +59,7 @@ NTD <- function(X, M=NULL, pseudocount=1e-10,
                     Xn_bar <- cs_unfold(recTensor(S=S, A=A), m = n)@data
                     numer <- S_A %*% ((pMn * Xn) * (pMn * Xn_bar^(Beta - 1)))
                     denom <- S_A %*% (t(S_A) %*% A[[n]])^Beta
-                    A[[n]] <- A[[n]] * numer/(denom + L1_A + L2_A * A[[n]])
+                    A[[n]] <- A[[n]] * (numer / (denom + L1_A + L2_A * A[[n]]))^.rho(Beta)
                 }else if (algorithm == "HALS") {
                     X_bar <- recTensor(S=S, A=A, idx = setdiff(1:N, n))
                     for (jn in 1:nrow(A[[n]])) {

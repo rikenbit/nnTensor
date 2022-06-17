@@ -42,14 +42,14 @@ siNMF <- function(X, M=NULL, pseudocount=1e-10,
                 W_numer <- W_numer + w[k] * (pM[[k]] * X[[k]] * (pM[[k]] * X_bar[[k]])^(-p)) %*% H[[k]]
                 W_denom <- W_denom + w[k] * (pM[[k]] * W %*% t(H[[k]]))^(1-p) %*% H[[k]] + L1_W + L2_W * W
             }
-            W <- .columnNorm(.positive(W * W_numer / W_denom))
+            W <- .columnNorm(.positive(W * W_numer / W_denom)^.rho(p))
         }
         # Update H_k
         for(k in seq_len(K)){
             if(!fixH[k]){
                 Hk_numer <- (t(pM[[k]]*X[[k]]) * t(pM[[k]]*X_bar[[k]])^(-p)) %*% W
                 Hk_denom <- t(pM[[k]] * W %*% t(H[[k]]))^(1-p) %*% W + L1_H + L2_H * H[[k]]
-                H[[k]] <- H[[k]] * Hk_numer / Hk_denom
+                H[[k]] <- H[[k]] * (Hk_numer / Hk_denom)^.rho(p)
             }
         }
         # After Update W, H_k

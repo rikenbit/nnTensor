@@ -161,24 +161,28 @@ NMF <- function(X, M=NULL, pseudocount=1e-10,
         }
         else if (algorithm == "Alpha") {
             if(!fixU){
-                U <- U * ((((pM * X)/(pM * U %*% t(V)))^Alpha %*% V) /
-                    (matrix(1, nrow = nrow(X), ncol = 1) %*%
-                        colSums(V)))^(1/Alpha)
+                numer <- (((pM * X)/(pM * U %*% t(V)))^Alpha %*% V)
+                denom <- (matrix(1, nrow = nrow(X), ncol = 1) %*%
+                        colSums(V))
+                U <- U * (numer / denom)^(1/Alpha)
             }
             if(!fixV){
-                V <- V * ((t((pM * X)/(pM * U %*% t(V)))^Alpha %*% U) /
-                    (matrix(1, nrow = ncol(X), ncol = 1) %*%
-                        colSums(U)))^(1/Alpha)
+                numer <- (t((pM * X)/(pM * U %*% t(V)))^Alpha %*% U)
+                denom <- (matrix(1, nrow = ncol(X), ncol = 1) %*%
+                        colSums(U))
+                V <- V * (numer / denom)^(1/Alpha)
             }
         }
         else if (algorithm == "Beta") {
             if(!fixU){
-                U <- U * (((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% V) /
-                ((pM * U %*% t(V))^(Beta - 1) %*% V + L1_U + L2_U * U)
+                numer <- ((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% V
+                denom <- (pM * U %*% t(V) )^(Beta - 1) %*% V + L1_U + L2_U * U
+                U <- U * (numer / denom)^.rho(Beta)
             }
             if(!fixV){
-                V <- V * (t((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% U) /
-                (t((pM * U %*% t(V))^(Beta - 1)) %*% U + L1_V + L2_V * V)
+                numer <- t((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% U
+                denom <- t((pM * U %*% t(V))^(Beta - 1)) %*% U + L1_V + L2_V * V
+                V <- V * (numer / denom)^.rho(Beta)
             }
         }
         else if (algorithm == "HALS") {
@@ -209,8 +213,10 @@ NMF <- function(X, M=NULL, pseudocount=1e-10,
         else if (algorithm == "Projected") {
             pX <- pM * X
             if(!fixU){
-                U <- U * (pX %*% t(pX) %*% U) / ((U %*% t(U) %*% pX %*% t(pX) %*% U)
-                    + (pX %*% t(pX) %*% U %*% t(U) %*% U))
+                numer <- pX %*% t(pX) %*% U
+                denom_1 <- U %*% t(U) %*% pX %*% t(pX) %*% U
+                denom_2 <- pX %*% t(pX) %*% U %*% t(U) %*% U
+                U <- U * (numer / (denom_1 + denom_2))
             }
             if(!fixV){
                 V <- t(pX) %*% U
@@ -219,7 +225,9 @@ NMF <- function(X, M=NULL, pseudocount=1e-10,
         else if (algorithm == "NHR") {
             pX <- pM * X
             if(!fixU){
-                U <- U * (pX %*% t(pX) %*% U) / ((U %*% t(U) %*% pX %*% t(pX) %*% U))
+                numer <- pX %*% t(pX) %*% U
+                denom <- U %*% t(U) %*% pX %*% t(pX) %*% U
+                U <- U * (numer / denom)
             }
             if(!fixV){
                 V <- t(pX) %*% U
@@ -229,28 +237,40 @@ NMF <- function(X, M=NULL, pseudocount=1e-10,
         else if (algorithm == "DTPP") {
             pX <- pM * X
             if(!fixU){
-                U <- U * sqrt((pX %*% V) / (U %*% t(U) %*% pX %*% V))
+                numer <- pX %*% V
+                denom <- U %*% t(U) %*% pX %*% V
+                U <- U * sqrt(numer / denom)
             }
             if(!fixV){
-                V <- t(t(V) * (t(U) %*% pX) / (t(U) %*% (pM * (U %*% t(V)))))
+                numer <- t(U) %*% pX
+                denom <- t(U) %*% (pM * (U %*% t(V)))
+                V <- t(t(V) * numer / denom)
             }
         }
         else if (algorithm == "Orthogonal") {
             pX <- pM * X
             if(!fixU){
-                U <- U * ((pX %*% V) / ((pM * (U %*% t(V))) %*% t(pX) %*% U))
+                numer <- pX %*% V
+                denom <- (pM * (U %*% t(V))) %*% t(pX) %*% U
+                U <- U * (numer / denom)
             }
             if(!fixV){
-                V <- t(t(V) * (t(U) %*% pX) / (t(U) %*% (pM * (U %*% t(V)))))
+                numer <- t(U) %*% pX
+                denom <- (t(U) %*% pM * (U %*% t(V)))
+                V <- t(t(V) * numer / denom)
             }
         }
         else if (algorithm == "OrthReg") {
             pX <- pM * X
             if(!fixU){
-                U <- U * sqrt((pX %*% V + L2_U * U) / (U %*% t(V) %*% V + 2 * L2_U * U %*% t(U) %*% U))
+                numer <- pX %*% V + L2_U * U
+                denom <- U %*% t(V) %*% V + 2 * L2_U * U %*% t(U) %*% U
+                U <- U * sqrt(numer / denom)
             }
             if(!fixV){
-                V <- V * sqrt((t(pX) %*% U) / (V %*% t(U) %*% U))
+                numer <- t(pX) %*% U
+                denom <- V %*% t(U) %*% U
+                V <- V * sqrt(numer / denom)
             }
         }
         else {
@@ -357,7 +377,6 @@ NMF <- function(X, M=NULL, pseudocount=1e-10,
         TestRecError=TestRecError, RelChange=RelChange,
         Alpha=Alpha, Beta=Beta, algorithm=algorithm)
 }
-
 
 plot <- function(x, ...){
     UseMethod("plot", x, ...)

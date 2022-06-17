@@ -56,7 +56,7 @@ NTF <- function(X, M=NULL, pseudocount=1e-10,
                     numer <- t(A_notn) %*% (cs_unfold(pM*X, m = n)@data/cs_unfold(pM*X_bar^(Beta - 1), m = n)@data)
                     denom <- t(A_notn) %*% cs_unfold(X_bar^(Beta),
                       m = n)@data
-                    A[[n]] <- A[[n]] * numer/(denom + L1_A + L2_A * A[[n]])
+                    A[[n]] <- A[[n]] * (numer / (denom + L1_A + L2_A * A[[n]]))^.rho(Beta)
                     if (n != N) {
                       A[[n]] <- t(apply(A[[n]], 1, function(x) {
                         x/norm(as.matrix(x), "F")
