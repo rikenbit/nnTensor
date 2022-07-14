@@ -355,7 +355,7 @@
     }
 }
 
-.positive <- function(X, thr = 1e-10){
+.positive <- function(X, thr = .Machine$double.eps){
     if (is(X)[1] == "matrix") {
         X[which(X < thr)] <- thr
     }

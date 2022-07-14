@@ -1,4 +1,4 @@
-jNMF <- function(X, M=NULL, pseudocount=1e-10,
+jNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     initW=NULL, initV=NULL, initH=NULL,
     fixW=FALSE, fixV=FALSE, fixH=FALSE,
     L1_W=1e-10, L1_V=1e-10, L1_H=1e-10,

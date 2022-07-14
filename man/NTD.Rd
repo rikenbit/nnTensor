@@ -11,8 +11,9 @@ NTD decompose the tensor to the dense core tensor (S) and low-dimensional
 factor matices (A).
 }
 \usage{
-NTD(X, M=NULL, pseudocount=1e-10, initS=NULL, initA=NULL, fixS=FALSE,
-  fixA=FALSE, L1_A=1e-10, L2_A=1e-10, rank = c(3, 3, 3), modes = 1:3,
+NTD(X, M=NULL, pseudocount=.Machine$double.eps, initS=NULL, initA=NULL,
+  fixS=FALSE, fixA=FALSE, L1_A=1e-10, L2_A=1e-10, rank = c(3, 3, 3),
+  modes = 1:3,
   algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
     "HALS", "Alpha", "Beta", "NMF"), init = c("NMF", "ALS", "Random"),
   nmf.algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger",
@@ -32,7 +33,7 @@ The mask tensor which has I1, I2, and I3 dimensions. If the mask tensor has
 missing values, specify the element as 0 (otherwise 1).
 }
   \item{pseudocount}{
-The pseudo count to avoid zero division, when the element is zero (Default: 1e-10).
+The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).
 }
   \item{initS}{
 The initial values of core tensor which has J1, J2, and J3 dimensions

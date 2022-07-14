@@ -12,7 +12,8 @@ This function is also used as initialization step of tensor decomposition
 (see also NTF and NTD).
 }
 \usage{
-NMF(X, M=NULL, pseudocount=1e-10, initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
+NMF(X, M=NULL, pseudocount=.Machine$double.eps, initU=NULL, initV=NULL,
+  fixU=FALSE, fixV=FALSE,
   L1_U=1e-10, L1_V=1e-10, L2_U=1e-10, L2_V=1e-10, J = 3,
   rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals",
     "sparseness.basis", "sparseness.coef", "sparseness2.basis",
@@ -34,7 +35,7 @@ The mask matrix which has N-rows and M-columns. If the input matrix has
 missing values, specify the element as 0 (otherwise 1).
 }
   \item{pseudocount}{
-The pseudo count to avoid zero division, when the element is zero (Default: 1e-10).
+The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).
 }
 \item{initU}{
 The initial values of factor matrix U, which has N-rows and J-columns

@@ -6,8 +6,9 @@ import(ggplot2)
 
 importFrom(grDevices, dev.off, png)
 importFrom(methods, is)
+importFrom(MASS, ginv)
 importFrom(stats, runif, sd, rpois, median)
-importFrom(graphics, layout)
+importFrom(graphics, layout, plot.new)
 importFrom("stats", "as.dist", "cophenetic", "cor", "hclust")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 

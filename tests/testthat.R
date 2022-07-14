@@ -7,6 +7,7 @@ options(testthat.use_colours = FALSE)
 # Basic usage
 test_file("testthat/test_toyModel.R")
 test_file("testthat/test_NMF.R")
+test_file("testthat/test_NMTF.R")
 test_file("testthat/test_siNMF.R")
 test_file("testthat/test_jNMF.R")
 test_file("testthat/test_NTF.R")

@@ -1,15 +1,21 @@
 Package: nnTensor
 Type: Package
 Title: Non-Negative Tensor Decomposition
-Version: 1.1.7
-Date: 2022-05-17
+Version: 1.1.8
+Date: 2022-07-14
 Authors@R: c(person("Koki", "Tsuyuzaki", role = c("aut", "cre"),
                       email = "k.t.the-answer@hotmail.co.jp"),
                person("Manabu", "Ishii", role = "aut"),
                person("Itoshi", "Nikaido", role = "aut"))
 Suggests: testthat
 Depends: R (>= 3.4.0)
-Imports: methods, fields, rTensor, plot3D, tagcloud, ggplot2
-Description: Some functions for performing non-negative matrix factorization, non-negative CANDECOMP/PARAFAC (CP) decomposition, non-negative Tucker decomposition, and generating toy model data. See Andrzej Cichock et al (2009) <doi:10.1002/9780470747278> and the reference section of GitHub README.md <https://github.com/rikenbit/nnTensor>, for details of the methods.
+Imports: methods,
+    MASS,
+    fields,
+    rTensor,
+    plot3D,
+    tagcloud,
+    ggplot2
+Description: Some functions for performing non-negative matrix factorization, non-negative CANDECOMP/PARAFAC (CP) decomposition, non-negative Tucker decomposition, and generating toy model data. See Andrzej Cichock et al (2009) and the reference section of GitHub README.md <https://github.com/rikenbit/nnTensor>, for details of the methods.
 License: Artistic-2.0
 URL: https://github.com/rikenbit/nnTensor

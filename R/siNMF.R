@@ -1,4 +1,4 @@
-siNMF <- function(X, M=NULL, pseudocount=1e-10,
+siNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     initW=NULL, initH=NULL,
     fixW=FALSE, fixH=FALSE,
     L1_W=1e-10, L1_H=1e-10,
@@ -173,7 +173,7 @@ siNMF <- function(X, M=NULL, pseudocount=1e-10,
 }
 
 .initsiNMF <- function(X, initW, initH, J, p, thr, algorithm, verbose){
-        if(is.null(initW)){
+    if(is.null(initW)){
         W <- matrix(runif(nrow(X[[1]])*J), nrow=nrow(X[[1]]), ncol=J)
         W <- .columnNorm(W * W)
     }else{

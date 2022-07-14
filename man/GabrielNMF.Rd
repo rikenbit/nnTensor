@@ -8,7 +8,8 @@ Gabriel-type Bi-Cross-Validation for Non-negative Matrix Factorization
 \description{
 The input data is assumed to be non-negative matrix.
 GabrielNMF devides the input file into four matrices (A, B, C, and D)
-and perform cross validation by the prediction of A from the matrices B, C, and D.
+and perform cross validation by the prediction of A from the matrices
+B, C, and D.
 }
 \usage{
 GabrielNMF(X, J = 3, nx = 5, ny = 5, ...)

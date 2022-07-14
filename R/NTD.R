@@ -1,4 +1,4 @@
-NTD <- function(X, M=NULL, pseudocount=1e-10,
+NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     L1_A=1e-10, L2_A=1e-10, rank = c(3, 3, 3), modes = 1:3,
     algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha", "Beta", "NMF"), init = c("NMF", "ALS", "Random"),

@@ -11,7 +11,7 @@ NTF decompose the tensor to the diagonal core tensor (S) and low-dimensional
 factor matices (A).
 }
 \usage{
-NTF(X, M=NULL, pseudocount=1e-10, initA=NULL,
+NTF(X, M=NULL, pseudocount=.Machine$double.eps, initA=NULL,
   fixA=FALSE, L1_A=1e-10, L2_A=1e-10, rank = 3,
   algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
     "HALS", "Alpha-HALS", "Beta-HALS", "Alpha", "Beta"),
@@ -29,7 +29,7 @@ The mask tensor which has I1, I2, and I3 dimensions. If the mask tensor has
 missing values, specify the element as 0 (otherwise 1).
 }
   \item{pseudocount}{
-The pseudo count to avoid zero division, when the element is zero (Default: 1e-10).
+The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).
 }
   \item{initA}{
 A list containing the initial values of multiple factor matrices

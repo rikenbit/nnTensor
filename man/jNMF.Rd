@@ -10,13 +10,14 @@ The input data objects are assumed to be non-negative matrices.
 jNMF decompose the matrices to two low-dimensional factor matices simultaneously.
 }
 \usage{
-jNMF(X, M=NULL, pseudocount=1e-10,
+jNMF(X, M=NULL, pseudocount=.Machine$double.eps,
   initW=NULL, initV=NULL, initH=NULL, fixW=FALSE, fixV=FALSE,
   fixH=FALSE,
   L1_W=1e-10, L1_V=1e-10, L1_H=1e-10,
   L2_W=1e-10, L2_V=1e-10, L2_H=1e-10,
   J = 3, w=NULL, algorithm = c("Frobenius", "KL", "IS", "PLTF"),
-  p=1, thr = 1e-10, num.iter = 100, viz = FALSE, figdir = NULL, verbose = FALSE)
+  p=1, thr = 1e-10, num.iter = 100, viz = FALSE,
+  figdir = NULL, verbose = FALSE)
 }
 
 \arguments{
@@ -28,7 +29,7 @@ A list containing the mask matrices (X_k, <N*Mk>, k=1..K). If the input matrix
 has missing values, specify the element as 0 (otherwise 1).
 }
   \item{pseudocount}{
-The pseudo count to avoid zero division, when the element is zero (Default: 1e-10).
+The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).
 }
   \item{initW}{
 The initial values of factor matrix W, which has N-rows and J-columns

@@ -1,4 +1,4 @@
-NTF <- function(X, M=NULL, pseudocount=1e-10,
+NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     initA=NULL, fixA=FALSE,
     L1_A=1e-10, L2_A=1e-10, rank = 3,
     algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha-HALS", "Beta-HALS", "Alpha", "Beta"), init = c("NMF", "ALS", "Random"), Alpha = 1,

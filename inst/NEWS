@@ -1,3 +1,8 @@
+VERSION 1.1.8
+------------------------
+   o NMTF() for nonnegative matrix tri-factorization was added
+   o pseudocount 1e-10 for NMF(), siNMF(), jNMF(), NTF(), NTD() was replaced by the machine epsilon
+
 VERSION 1.1.7
 ------------------------
    o Exponent term depending on Beta parameter was added in NMF, siNMF, jNMF, NTF, and NTD

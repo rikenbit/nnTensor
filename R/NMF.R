@@ -1,4 +1,4 @@
-NMF <- function(X, M=NULL, pseudocount=1e-10,
+NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
     L1_U=1e-10, L1_V=1e-10, L2_U=1e-10, L2_V=1e-10, J = 3,
     rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,

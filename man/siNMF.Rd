@@ -11,7 +11,8 @@ siNMF decompose the matrices to two low-dimensional factor
 matices simultaneously.
 }
 \usage{
-siNMF(X, M=NULL, pseudocount=1e-10, initW=NULL, initH=NULL, fixW=FALSE, fixH=FALSE,
+siNMF(X, M=NULL, pseudocount=.Machine$double.eps, initW=NULL, initH=NULL,
+  fixW=FALSE, fixH=FALSE,
   L1_W=1e-10, L1_H=1e-10, L2_W=1e-10, L2_H=1e-10, J = 3,
   w=NULL, algorithm = c("Frobenius", "KL", "IS", "PLTF"), p=1,
     thr = 1e-10, num.iter = 100,
@@ -27,7 +28,7 @@ A list containing the mask matrices (X_k, <N*Mk>, k=1..K). If the input matrix
 has missing values, specify the element as 0 (otherwise 1).
 }
   \item{pseudocount}{
-The pseudo count to avoid zero division, when the element is zero (Default: 1e-10).
+The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).
 }
   \item{initW}{
 The initial values of factor matrix W, which has N-rows and J-columns
