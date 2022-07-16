@@ -20,7 +20,7 @@ NMF(X, M=NULL, pseudocount=.Machine$double.eps, initU=NULL, initV=NULL,
     "sparseness2.coef", "norm.info.gain.basis", "norm.info.gain.coef",
     "singular",  "volume", "condition"), runtime=30,
   algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
-    "Alpha", "Beta", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP",
+    "Alpha", "Beta", "ALS", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP",
     "Orthogonal", "OrthReg"), Alpha = 1, Beta = 2,
   eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04,
   num.iter = 100, viz = FALSE, figdir = NULL, verbose = FALSE)
@@ -79,7 +79,7 @@ specified as a numerical vector longer than two, this option will be active.
 The number of trials to estimate rank (Default: 10).
 }
 \item{algorithm}{
-NMF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", and "OrthReg" are available (Default: "Frobenius").
+NMF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "ALS", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", and "OrthReg" are available (Default: "Frobenius").
 }
 \item{Alpha}{
 The parameter of Alpha-divergence.

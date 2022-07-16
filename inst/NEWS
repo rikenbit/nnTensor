@@ -1,3 +1,9 @@
+VERSION 1.1.9
+------------------------
+   o Some bugs were fixed
+   o orthU orthV, and root options were added in NMTF()
+   o ALS-type NMF was added in NMF()
+
 VERSION 1.1.8
 ------------------------
    o NMTF() for nonnegative matrix tri-factorization was added

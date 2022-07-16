@@ -15,6 +15,7 @@ importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 export(
     toyModel,
     NMF,
+    NMTF,
     siNMF,
     jNMF,
     plotTensor3D,

@@ -2,7 +2,9 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     initU=NULL, initV=NULL, fixU=FALSE, fixV=FALSE,
     L1_U=1e-10, L1_V=1e-10, L2_U=1e-10, L2_V=1e-10, J = 3,
     rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,
-    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", "OrthReg"), Alpha = 1, Beta = 2,
+    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
+        "Alpha", "Beta", "ALS", "PGD", "HALS", "GCD", "Projected", "NHR",
+        "DTPP", "Orthogonal", "OrthReg"), Alpha = 1, Beta = 2,
     eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04, num.iter = 100,
     viz = FALSE, figdir = NULL, verbose = FALSE){
     # Argument check
@@ -151,131 +153,10 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         # Update U, V
         X_bar <- .recMatrix(U, V)
         pre_Error <- .recError(X, X_bar)
-        if (algorithm == "PGD") {
-            if(!fixU){
-                U <- .positive(U - eta * (-2 * (pM * X) %*% V + 2 * (pM * U %*% t(V)) %*% V), thr2)
-            }
-            if(!fixV){
-                V <- .positive(V - eta * (-2 * t(pM * X) %*% U + 2 * (t(pM) * V %*% t(U)) %*% U), thr2)
-            }
-        }
-        else if (algorithm == "Alpha") {
-            if(!fixU){
-                numer <- (((pM * X)/(pM * U %*% t(V)))^Alpha %*% V)
-                denom <- (matrix(1, nrow = nrow(X), ncol = 1) %*%
-                        colSums(V))
-                U <- U * (numer / denom)^(1/Alpha)
-            }
-            if(!fixV){
-                numer <- (t((pM * X)/(pM * U %*% t(V)))^Alpha %*% U)
-                denom <- (matrix(1, nrow = ncol(X), ncol = 1) %*%
-                        colSums(U))
-                V <- V * (numer / denom)^(1/Alpha)
-            }
-        }
-        else if (algorithm == "Beta") {
-            if(!fixU){
-                numer <- ((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% V
-                denom <- (pM * U %*% t(V) )^(Beta - 1) %*% V + L1_U + L2_U * U
-                U <- U * (numer / denom)^.rho(Beta)
-            }
-            if(!fixV){
-                numer <- t((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% U
-                denom <- t((pM * U %*% t(V))^(Beta - 1)) %*% U + L1_V + L2_V * V
-                V <- V * (numer / denom)^.rho(Beta)
-            }
-        }
-        else if (algorithm == "HALS") {
-            A <- X %*% V
-            B <- t(V) %*% V
-            for (j in 1:J) {
-                U[, j] <- .positive(A[, j] - U %*% B[, j] + U[,
-                  j] * B[j, j], thr2)
-                U[, j] <- U[, j]/norm(as.matrix(U[, j]), "F")
-            }
-            C <- t(X) %*% U
-            D <- t(U) %*% U
-            for (j in 1:J) {
-                V[, j] <- .positive(C[, j] - V %*% D[, j] + V[,
-                  j] * D[j, j], thr2)
-            }
-        }
-        else if (algorithm == "GCD") {
-            if(!fixU){
-                Unew <- .doiter(U, V, X, tol = tol, J)
-                U <- U + Unew
-            }
-            if(!fixV){
-                Vnew <- .doiter(V, U, t(X), tol = tol, J)
-                V <- V + Vnew
-            }
-        }
-        else if (algorithm == "Projected") {
-            pX <- pM * X
-            if(!fixU){
-                numer <- pX %*% t(pX) %*% U
-                denom_1 <- U %*% t(U) %*% pX %*% t(pX) %*% U
-                denom_2 <- pX %*% t(pX) %*% U %*% t(U) %*% U
-                U <- U * (numer / (denom_1 + denom_2))
-            }
-            if(!fixV){
-                V <- t(pX) %*% U
-            }
-        }
-        else if (algorithm == "NHR") {
-            pX <- pM * X
-            if(!fixU){
-                numer <- pX %*% t(pX) %*% U
-                denom <- U %*% t(U) %*% pX %*% t(pX) %*% U
-                U <- U * (numer / denom)
-            }
-            if(!fixV){
-                V <- t(pX) %*% U
-            }
-        }
-
-        else if (algorithm == "DTPP") {
-            pX <- pM * X
-            if(!fixU){
-                numer <- pX %*% V
-                denom <- U %*% t(U) %*% pX %*% V
-                U <- U * sqrt(numer / denom)
-            }
-            if(!fixV){
-                numer <- t(U) %*% pX
-                denom <- t(U) %*% (pM * (U %*% t(V)))
-                V <- t(t(V) * numer / denom)
-            }
-        }
-        else if (algorithm == "Orthogonal") {
-            pX <- pM * X
-            if(!fixU){
-                numer <- pX %*% V
-                denom <- (pM * (U %*% t(V))) %*% t(pX) %*% U
-                U <- U * (numer / denom)
-            }
-            if(!fixV){
-                numer <- t(U) %*% pX
-                denom <- (t(U) %*% pM * (U %*% t(V)))
-                V <- t(t(V) * numer / denom)
-            }
-        }
-        else if (algorithm == "OrthReg") {
-            pX <- pM * X
-            if(!fixU){
-                numer <- pX %*% V + L2_U * U
-                denom <- U %*% t(V) %*% V + 2 * L2_U * U %*% t(U) %*% U
-                U <- U * sqrt(numer / denom)
-            }
-            if(!fixV){
-                numer <- t(pX) %*% U
-                denom <- V %*% t(U) %*% U
-                V <- V * sqrt(numer / denom)
-            }
-        }
-        else {
-            stop("Please specify the appropriate algorithm\n")
-        }
+        U <- .updateU_NMF(X, pM, U, V, fixU, L1_U, L2_U, J, algorithm,
+            Alpha, Beta, eta, thr2, tol)
+        V <- .updateV_NMF(X, pM, U, V, fixV, L1_V, L2_V, J, algorithm,
+            Alpha, Beta, eta, thr2, tol)
         # After Update U, V
         iter <- iter + 1
         X_bar <- .recMatrix(U, V)
@@ -373,9 +254,130 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    list(X=X, M=M, pM=pM, U=U, V=V, RecError=RecError, TrainRecError=TrainRecError,
+    list(X=X, M=M, pM=pM, U=U, V=V, RecError=RecError,
+        TrainRecError=TrainRecError,
         TestRecError=TestRecError, RelChange=RelChange,
         Alpha=Alpha, Beta=Beta, algorithm=algorithm)
+}
+
+.updateU_NMF <- function(X, pM, U, V, fixU, L1_U, L2_U, J, algorithm, Alpha, Beta, eta, thr2, tol){
+    if(!fixU){
+        if(algorithm == "ALS"){
+            U <- .positive(X %*% ginv(t(V)))
+            # U <- .positive(X %*% V %*% ginv(t(V) %*% V))
+        }
+        if(algorithm == "PGD"){
+            U <- .positive(U - eta * (-2 * (pM * X) %*% V +
+                2 * (pM * U %*% t(V)) %*% V), thr2)
+        }
+        if(algorithm == "Alpha"){
+            numer <- (((pM * X)/(pM * U %*% t(V)))^Alpha %*% V)
+            denom <- (matrix(1, nrow = nrow(X), ncol = 1) %*%
+                    colSums(V))
+            U <- U * (numer / denom)^(1/Alpha)
+        }
+        if(algorithm == "Beta"){
+            numer <- ((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% V
+            denom <- (pM * U %*% t(V) )^(Beta - 1) %*% V + L1_U + L2_U * U
+            U <- U * (numer / denom)^.rho(Beta)
+        }
+        if(algorithm == "HALS"){
+            A <- X %*% V
+            B <- t(V) %*% V
+            for (j in 1:J) {
+                U[, j] <- .positive(A[, j] - U %*% B[, j] + U[,
+                  j] * B[j, j], thr2)
+                U[, j] <- U[, j]/norm(as.matrix(U[, j]), "F")
+            }
+        }
+        if(algorithm == "GCD"){
+            U <- U + .doiter(U, V, X, tol = tol, J)
+        }
+        if(algorithm == "Projected"){
+            pX <- pM * X
+            numer <- pX %*% t(pX) %*% U
+            denom_1 <- U %*% t(U) %*% pX %*% t(pX) %*% U
+            denom_2 <- pX %*% t(pX) %*% U %*% t(U) %*% U
+            U <- U * (numer / (denom_1 + denom_2))
+        }
+        if(algorithm == "NHR"){
+            pX <- pM * X
+            numer <- pX %*% t(pX) %*% U
+            denom <- U %*% t(U) %*% pX %*% t(pX) %*% U
+            U <- U * (numer / denom)
+        }
+        if(algorithm == "DTPP"){
+            pX <- pM * X
+            numer <- pX %*% V
+            denom <- U %*% t(U) %*% pX %*% V
+            U <- U * sqrt(numer / denom)
+        }
+        if(algorithm == "Orthogonal"){
+            pX <- pM * X
+            numer <- pX %*% V
+            denom <- (pM * (U %*% t(V))) %*% t(pX) %*% U
+            U <- U * (numer / denom)
+        }
+        if(algorithm == "OrthReg"){
+            pX <- pM * X
+            numer <- pX %*% V + L2_U * U
+            denom <- U %*% t(V) %*% V + 2 * L2_U * U %*% t(U) %*% U
+            U <- U * sqrt(numer / denom)
+        }
+    }
+    U
+}
+
+.updateV_NMF <- function(X, pM, U, V, fixV, L1_V, L2_V, J, algorithm, Alpha, Beta, eta, thr2, tol){
+    if(!fixV){
+        if(algorithm == "ALS"){
+            V <- .positive(t(X) %*% ginv(t(U)))
+            # V <- .positive(t(X) %*% U %*% ginv(t(U) %*% U))
+        }
+        if(algorithm == "PGD"){
+            V <- .positive(V - eta * (-2 * t(pM * X) %*% U +
+                2 * (t(pM) * V %*% t(U)) %*% U), thr2)
+        }
+        if(algorithm == "Alpha"){
+            numer <- (t((pM * X)/(pM * U %*% t(V)))^Alpha %*% U)
+            denom <- (matrix(1, nrow = ncol(X), ncol = 1) %*%
+                    colSums(U))
+            V <- V * (numer / denom)^(1/Alpha)
+        }
+        if(algorithm == "Beta"){
+            numer <- t((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% U
+            denom <- t((pM * U %*% t(V))^(Beta - 1)) %*% U + L1_V + L2_V * V
+            V <- V * (numer / denom)^.rho(Beta)
+        }
+        if(algorithm == "HALS"){
+            C <- t(X) %*% U
+            D <- t(U) %*% U
+            for (j in 1:J) {
+                V[, j] <- .positive(C[, j] - V %*% D[, j] + V[,
+                  j] * D[j, j], thr2)
+            }
+        }
+        if(algorithm == "GCD"){
+            V <- V + .doiter(V, U, t(X), tol = tol, J)
+        }
+        if(algorithm %in% c("Projected", "NHR")){
+            pX <- pM * X
+            V <- t(pX) %*% U
+        }
+        if(algorithm %in% c("DTPP", "Orthogonal")){
+            pX <- pM * X
+            numer <- t(U) %*% pX
+            denom <- t(U) %*% (pM * (U %*% t(V)))
+            V <- t(t(V) * numer / denom)
+        }
+        if(algorithm == "OrthReg"){
+            pX <- pM * X
+            numer <- t(pX) %*% U
+            denom <- V %*% t(U) %*% U
+            V <- V * sqrt(numer / denom)
+        }
+    }
+    V
 }
 
 plot <- function(x, ...){

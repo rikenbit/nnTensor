@@ -15,9 +15,10 @@ NMTF(X, pseudocount=.Machine$double.eps,
     fixU=FALSE, fixS=FALSE, fixV=FALSE,
     L1_U=1e-10, L1_S=1e-10, L1_V=1e-10,
     L2_U=1e-10, L2_S=1e-10, L2_V=1e-10,
+    orthU=FALSE, orthV=FALSE,
     rank = c(3, 4),
     algorithm = c("Frobenius", "KL", "IS", "ALS", "PG", "COD", "Beta"),
-    Beta = 2, thr = 1e-10, num.iter = 100,
+    Beta = 2, root = FALSE, thr = 1e-10, num.iter = 100,
     viz = FALSE, figdir = NULL, verbose = FALSE)
 }
 
@@ -67,6 +68,12 @@ Paramter for L2 regularitation (Default: 1e-10).
 \item{L2_V}{
 Paramter for L2 regularitation (Default: 1e-10).
 }
+\item{orthU}{
+Whether the column vectors of matrix U are orthogonalized (Default: FALSE).
+}
+\item{orthV}{
+Whether the column vectors of matrix V are orthogonalized (Default: FALSE).
+}
 \item{rank}{
 The number of low-dimension (J1 (< N) and J2 (< M)) (Default: c(3,4)).
 }
@@ -75,6 +82,9 @@ NMTF algorithms. "Frobenius", "KL", "IS", "ALS", "PG", "COD", and "Beta" are ava
 }
 \item{Beta}{
 The parameter of Beta-divergence (Default: 2, which means "Frobenius").
+}
+\item{root}{
+Whether square root is calculed in each iteration (Default: FALSE).
 }
 \item{thr}{
 When error change rate is lower than thr, the iteration is terminated (Default: 1E-10).
@@ -107,6 +117,8 @@ If verbose == TRUE, Error change rate is generated in console window.
 Fast Optimization of Non-Negative Matrix Tri-Factorization: Supporting Information, Andrej Copar, et. al., \emph{PLOS ONE}, 14(6), e0217994, 2019
 
 Co-clustering by Block Value Decomposition, Bo Long et al., \emph{SIGKDD'05}, 2005
+
+Orthogonal Nonnegative Matrix Tri-Factorizations for Clustering, Chris Ding et. al., \emph{12th ACM SIGKDD}, 2006
 }
 \author{Koki Tsuyuzaki}
 

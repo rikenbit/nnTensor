@@ -1,8 +1,9 @@
 NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     initS=NULL, initA=NULL, fixS=FALSE, fixA=FALSE,
     L1_A=1e-10, L2_A=1e-10, rank = c(3, 3, 3), modes = 1:3,
-    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha", "Beta", "NMF"), init = c("NMF", "ALS", "Random"),
-    nmf.algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", "OrthReg"),
+    algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha", "Beta", "NMF"),
+    init = c("NMF", "ALS", "Random"),
+    nmf.algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "ALS", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", "OrthReg"),
     Alpha = 1, Beta = 2, thr = 1e-10, num.iter = 100,
     num.iter2 = 10, viz = FALSE,
     figdir = NULL, verbose = FALSE){

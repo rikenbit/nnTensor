@@ -3,15 +3,16 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     fixU=FALSE, fixS=FALSE, fixV=FALSE,
     L1_U=1e-10, L1_S=1e-10, L1_V=1e-10,
     L2_U=1e-10, L2_S=1e-10, L2_V=1e-10,
+    orthU=FALSE, orthV=FALSE,
     rank = c(3, 4),
     algorithm = c("Frobenius", "KL", "IS", "ALS", "PG", "COD", "Beta"),
-    Beta = 2, thr = 1e-10, num.iter = 100,
+    Beta = 2, root = FALSE, thr = 1e-10, num.iter = 100,
     viz = FALSE, figdir = NULL, verbose = FALSE){
     # Argument check
     algorithm <- match.arg(algorithm)
     .checkNMTF(X, pseudocount, initU, initS, initV,
-    fixU, fixS, fixV, L1_U, L1_S, L1_V, L2_U, L2_S, L2_V,
-    rank, Beta, thr, num.iter, viz, figdir, verbose)
+    fixU, fixS, fixV, L1_U, L1_S, L1_V, L2_U, L2_S, L2_V, orthU, orthV,
+    rank, Beta, root, thr, num.iter, viz, figdir, verbose)
     # Initizalization
     int <- .initNMTF(X, pseudocount, rank, initU, initS, initV,
     algorithm, Beta, thr, verbose)
@@ -31,15 +32,15 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         pre_Error <- .recError(X, X_bar)
         # Update U
         if(!fixU){
-            U <- .updateU(X, U, S, V, L1_U, L2_U, Beta, algorithm)
+            U <- .updateU(X, U, S, V, L1_U, L2_U, orthU, Beta, root, algorithm)
         }
         # Update V
         if(!fixV){
-            V <- .updateV(X, U, S, V, L1_V, L2_V, Beta, algorithm)
+            V <- .updateV(X, U, S, V, L1_V, L2_V, orthV, Beta, root, algorithm)
         }
         # Update S
         if(!fixS){
-            S <- .updateS(X, U, S, V, L1_S, L2_S, Beta, algorithm)
+            S <- .updateS(X, U, S, V, L1_S, L2_S, Beta, root, algorithm)
         }
         # After Update U, S, V
         iter <- iter + 1
@@ -82,8 +83,8 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
 }
 
 .checkNMTF <- function(X, pseudocount, initU, initS, initV,
-    fixU, fixS, fixV, L1_U, L1_S, L1_V, L2_U, L2_S, L2_V,
-    rank, Beta, thr, num.iter, viz, figdir, verbose){
+    fixU, fixS, fixV, L1_U, L1_S, L1_V, L2_U, L2_S, L2_V, orthU, orthV,
+    rank, Beta, root, thr, num.iter, viz, figdir, verbose){
     stopifnot(is.matrix(X))
     stopifnot(is.numeric(pseudocount))
     if(!is.null(initU)){
@@ -125,8 +126,11 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     if(L2_V < 0){
         stop("Please specify the L2_V that larger than 0")
     }
+    stopifnot(is.logical(orthU))
+    stopifnot(is.logical(orthV))
     stopifnot(is.numeric(rank))
     stopifnot(is.numeric(Beta))
+    stopifnot(is.logical(root))
     stopifnot(is.numeric(thr))
     stopifnot(is.numeric(num.iter))
     stopifnot(is.logical(viz))
@@ -179,28 +183,40 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         Beta=Beta, algorithm=algorithm)
 }
 
-.updateU <- function(X, U, S, V, L1_U, L2_U, Beta, algorithm){
+.updateU <- function(X, U, S, V, L1_U, L2_U, orthU, Beta, root, algorithm){
     if(algorithm == "Beta"){
-        VS <- V %*% t(S)
-        numer <- ((U %*% S %*% t(V))^(Beta-2) * X) %*% VS
-        denom <- (U %*% S %*% t(V))^(Beta-1) %*% VS
-        denom <- denom + L1_U + L2_U * U
-        U <- U * (numer / denom)^.rho(Beta)
+        if(orthU){
+            VS <- V %*% t(S)
+            UU <- U %*% t(U)
+            numer <- X %*% VS
+            denom <- UU %*% X %*% VS
+        }else{
+            VS <- V %*% t(S)
+            numer <- ((U %*% t(VS))^(Beta-2) * X) %*% VS
+            denom <- (U %*% t(VS))^(Beta-1) %*% VS
+            denom <- denom + L1_U + L2_U * U
+        }
+        U <- U * (numer / denom)^.rho(Beta, root)
     }
     if(algorithm == "ALS"){
         VS <- V %*% t(S)
-        U <- .positive((X %*% V %*% t(S)) %*% ginv(crossprod(VS)))
+        U <- .positive((X %*% VS) %*% ginv(crossprod(VS)))
     }
     if(algorithm == "PG"){
-        Pu <- U - U / ((U %*% S %*% t(V) %*% V %*% t(S)) * (X %*% V %*% t(S)))
-        numer <- sum(Pu * (U %*% S %*% t(V) %*% V %*% t(S) - X %*% V %*% t(S)))
-        denom <- .trace((S %*% t(V) %*% V) %*% (t(S) %*% t(Pu) %*% Pu))
+        USV <- U %*% S %*% t(V)
+        VS <- V %*% t(S)
+        VV <- t(V) %*% V
+        Pu <- U - U / ((USV %*% VS) * (X %*% VS))
+        numer <- sum(Pu * (USV %*% VS - X %*% VS))
+        denom <- .trace((S %*% VV) %*% (t(S) %*% t(Pu) %*% Pu))
         etaU <-  numer / denom
         U <- .positive(U - etaU * Pu)
     }
     if(algorithm == "COD"){
         for(i in seq_len(ncol(U))){
-            numer <- (X %*% V %*% t(S))[,i] - (U %*% S %*% t(V) %*% V %*% t(S))[,i]
+            VS <- V %*% t(S)
+            USV <- U %*% S %*% t(V)
+            numer <- (X %*% VS)[,i] - (USV %*% VS)[,i]
             denom <- as.numeric(crossprod(V %*% S[i, ]))
             U[,i] <- U[,i] + .positive(numer / denom)
         }
@@ -208,28 +224,39 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     U
 }
 
-.updateV <- function(X, U, S, V, L1_V, L2_V, Beta, algorithm){
+.updateV <- function(X, U, S, V, L1_V, L2_V, orthV, Beta, root, algorithm){
     if(algorithm == "Beta"){
         SU <- t(S) %*% t(U)
-        numer <- SU %*% ((U %*% S %*% t(V))^(Beta - 2) * X)
-        denom <- SU %*% (U %*% S %*% t(V))^(Beta - 1)
-        denom <- denom + L1_V + L2_V * t(V)
-        V <- V * t((numer / denom)^.rho(Beta))
+        VV <- V %*% t(V)
+        if(orthV){
+            numer <- SU %*% X
+            denom <- SU %*% X %*% VV
+        }else{
+            numer <- SU %*% ((t(SU) %*% t(V))^(Beta - 2) * X)
+            denom <- SU %*% (t(SU) %*% t(V))^(Beta - 1)
+            denom <- denom + L1_V + L2_V * t(V)
+        }
+        V <- V * t((numer / denom)^.rho(Beta, root))
     }
     if(algorithm == "ALS"){
         US <- U %*% S
-        V <- .positive((t(X) %*% U %*% S) %*% ginv(crossprod(US)))
+        V <- .positive((t(X) %*% US) %*% ginv(crossprod(US)))
     }
     if(algorithm == "PG"){
-        Pv <- V - V / ((V %*% t(S) %*% t(U) %*% U %*% S) * (t(X) %*% U %*% S))
-        numer <- sum(Pv * (V %*% t(S) %*% t(U) %*% U %*% S - t(X) %*% U %*% S))
-        denom <- .trace((S %*% t(Pv) %*% Pv) %*% (t(S) %*% t(U) %*% U))
+        VSU <- V %*% t(S) %*% t(U)
+        US <- U %*% S
+        SUU <- t(S) %*% t(U) %*% U
+        Pv <- V - V / ((VSU %*% US) * (t(X) %*% US))
+        numer <- sum(Pv * (VSU %*% US - t(X) %*% US))
+        denom <- .trace((S %*% t(Pv) %*% Pv) %*% SUU)
         etaV <-  numer / denom
         V <- .positive(V - etaV * Pv)
     }
     if(algorithm == "COD"){
         for(j in seq_len(ncol(V))){
-            numer <- (t(X) %*% U %*% S)[,j] - (V %*% t(S) %*% t(U) %*% U %*% S)[,j]
+            US <- U %*% S
+            VSU <- V %*% t(S) %*% t(U)
+            numer <- (t(X) %*% US)[,j] - (VSU %*% US)[,j]
             denom <- as.numeric(crossprod(U %*% S[,j]))
             V[,j] <- V[,j] + .positive(numer / denom)
         }
@@ -237,27 +264,37 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     V
 }
 
-.updateS <- function(X, U, S, V, L1_S, L2_S, Beta, algorithm){
+.updateS <- function(X, U, S, V, L1_S, L2_S, Beta, root, algorithm){
     if(algorithm == "Beta"){
-        numer <- t(U) %*% ((U %*% S %*% t(V))^(Beta-2) * X) %*% V
-        denom <- t(U) %*% (U %*% S %*% t(V))^(Beta-1) %*% V
+        US <- U %*% S
+        numer <- t(U) %*% ((US %*% t(V))^(Beta-2) * X) %*% V
+        denom <- t(U) %*% (US %*% t(V))^(Beta-1) %*% V
         denom <- denom + L1_S + L2_S * S
-        S <- S * (numer / denom)^.rho(Beta)
+        S <- S * (numer / denom)^.rho(Beta, root)
     }
     if(algorithm == "ALS"){
-        S <- .positive(ginv(t(U) %*% U) %*% (t(U) %*% X %*% V) %*% ginv(t(V) %*% V))
+        UU <- t(U) %*% U
+        UXV <- t(U) %*% X %*% V
+        VV <- t(V) %*% V
+        S <- .positive(ginv(UU) %*% UXV %*% ginv(VV))
     }
     if(algorithm == "PG"){
-        Ps <- S - S / ((t(U) %*% U %*% S %*% t(V) %*% V) * (t(U) %*% X %*% V))
-        numer <- sum(Ps * (t(U) %*% U %*% S %*% t(V) %*% V - t(U) %*% X %*% V))
-        denom <- .trace((t(U) %*% U %*% Ps) %*% (t(V) %*% V %*% t(Ps)))
+        USV <- U %*% S %*% t(V)
+        UXV <- t(U) %*% X %*% V
+        UU <- t(U) %*% U
+        VV <- t(V) %*% V
+        Ps <- S - S / ((t(U) %*% USV %*% V) * UXV)
+        numer <- sum(Ps * (t(U) %*% USV %*% V - UXV))
+        denom <- .trace((UU %*% Ps) %*% (VV %*% t(Ps)))
         etaS <-  numer / denom
         S <- .positive(S - etaS * Ps)
     }
     if(algorithm == "COD"){
+        UXV <- t(U) %*% X %*% V
+        UUSVV <- t(U) %*% U %*% S %*% t(V) %*% V
         for(i in seq_len(ncol(U))){
             for(j in seq_len(ncol(V))){
-                numer <- (t(U) %*% X %*% V)[i,j] - (t(U) %*% U %*% S %*% t(V) %*% V)[i,j]
+                numer <- UXV[i,j] - UUSVV[i,j]
                 denom <- as.numeric((U[,i] %*% U[,i]) * (V[,j] %*% V[,j]))
                 S[i,j] <- S[i,j] + .positive(numer / denom)
             }

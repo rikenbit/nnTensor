@@ -535,15 +535,19 @@
     paste(tmp, collapse=" * ")
 }
 
-.rho <- function(Beta){
-    if(Beta < 1){
-        rho_beta <- 1 / (2 - Beta)
+.rho <- function(Beta, root=FALSE){
+    if(root){
+        out <- 0.5
+    }else{
+        if(Beta < 1){
+            out <- 1 / (2 - Beta)
+        }
+        if((1 <= Beta) && (Beta <= 2)){
+            out <- 1
+        }
+        if(Beta > 2){
+            out <- 1 / (Beta - 1)
+        }
     }
-    if((1 <= Beta) && (Beta <= 2)){
-        rho_beta <- 1
-    }
-    if(Beta > 2){
-        rho_beta <- 1 / (Beta - 1)
-    }
-    rho_beta
+    out
 }
