@@ -1,3 +1,13 @@
+[![DOI](https://zenodo.org/badge/135140554.svg)](https://zenodo.org/badge/latestdoi/135140554)
+[![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/nnTensor)](
+https://cran.r-project.org/package=nnTensor)
+[![Downloads](https://cranlogs.r-pkg.org/badges/nnTensor)](https://CRAN.R-project.org/package=nnTensor)
+[![Total Downloads](https://cranlogs.r-pkg.org/badges/grand-total/nnTensor?color=orange)](https://CRAN.R-project.org/package=nnTensor)
+[![:name status badge](https://rikenbit.r-universe.dev/badges/:name)](https://rikenbit.r-universe.dev)
+[![:registry status badge](https://rikenbit.r-universe.dev/badges/:registry)](https://rikenbit.r-universe.dev)
+[![:total status badge](https://rikenbit.r-universe.dev/badges/:total)](https://rikenbit.r-universe.dev)
+[![nnTensor status badge](https://rikenbit.r-universe.dev/badges/nnTensor)](https://rikenbit.r-universe.dev)
+
 # nnTensor
 R package for Non-negative Tensor Decomposition
 
