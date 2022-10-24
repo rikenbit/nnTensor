@@ -8,6 +8,7 @@ https://cran.r-project.org/package=nnTensor)
 [![:total status badge](https://rikenbit.r-universe.dev/badges/:total)](https://rikenbit.r-universe.dev)
 [![nnTensor status badge](https://rikenbit.r-universe.dev/badges/nnTensor)](https://rikenbit.r-universe.dev)
 ![GitHub Actions](https://github.com/rikenbit/nnTensor/actions/workflows/build_test_push.yml/badge.svg)
+[![status](https://joss.theoj.org/papers/b8cc3029f784ee95c45831467b3b2f74/status.svg)](https://joss.theoj.org/papers/b8cc3029f784ee95c45831467b3b2f74)
 
 # nnTensor
 R package for Non-negative Tensor Decomposition
