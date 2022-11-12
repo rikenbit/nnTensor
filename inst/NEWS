@@ -1,3 +1,7 @@
+VERSION 1.1.10
+------------------------
+   o Inf/-Inf/NaN/NA is replaced by machine epsilon in NTF()
+
 VERSION 1.1.9
 ------------------------
    o Some bugs were fixed

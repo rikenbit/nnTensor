@@ -34,8 +34,11 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         X_bar <- recTensor(rep(1, length = rank), A, idx=seq(N))
         pre_Error <- .recError(X, X_bar)
         # Fill with Machine Epsilon
-        for(n in seq(N)){
-            A[[n]][which(A[[n]] < .Machine$double.eps)] <- .Machine$double.eps
+        for (n in seq(N)) {
+            A[[n]][which(A[[n]] < pseudocount)] <- pseudocount
+            A[[n]][which(is.infinite(A[[n]]))] <- pseudocount
+            A[[n]][which(is.nan(A[[n]]))] <- pseudocount
+            A[[n]][which(is.nan(A[[n]]))] <- pseudocount
         }
         # Update An
         if (algorithm == "Alpha") {
@@ -163,10 +166,12 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
                 E <- Xr - X_bar
             }
         }
+        # Fill with Machine Epsilon
         for (n in seq(N)) {
-            if (any(is.infinite(A[[n]])) || any(is.nan(A[[n]]))) {
-                stop("Inf or NaN is generated!\n")
-            }
+            A[[n]][which(A[[n]] < pseudocount)] <- pseudocount
+            A[[n]][which(is.infinite(A[[n]]))] <- pseudocount
+            A[[n]][which(is.nan(A[[n]]))] <- pseudocount
+            A[[n]][which(is.nan(A[[n]]))] <- pseudocount
         }
         # After Update U, V
         iter <- iter + 1
