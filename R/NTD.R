@@ -274,14 +274,11 @@ NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
             })
         } else if (init == "ALS") {
             sapply(modes, function(n) {
-                Xn <- cs_unfold(X, m = n)@data
-                An <- .positive(svd(Xn)$u[1:rank[n], ])
-                if(is.vector(An)){
-                    An <- as.matrix(An)
-                }
-                A[[n]] <<- t(apply(An, 1, function(x) {
-                    x/norm(as.matrix(x), "F")
-                }))
+                Xn <- cs_unfold(X, m = 1)@data
+                res.svd <- svd(Xn)
+                An <- t(.positive(res.svd$v[, seq(rank[n])]))
+                A[[n]] <<- t(apply(An, 1, function(x){
+                    x/norm(as.matrix(x), "F")}))
             })
         } else if (init == "Random") {
             sapply(modes, function(n) {

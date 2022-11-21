@@ -264,7 +264,6 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if(!fixU){
         if(algorithm == "ALS"){
             U <- .positive(X %*% ginv(t(V)))
-            # U <- .positive(X %*% V %*% ginv(t(V) %*% V))
         }
         if(algorithm == "PGD"){
             U <- .positive(U - eta * (-2 * (pM * X) %*% V +
@@ -332,7 +331,6 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if(!fixV){
         if(algorithm == "ALS"){
             V <- .positive(t(X) %*% ginv(t(U)))
-            # V <- .positive(t(X) %*% U %*% ginv(t(U) %*% U))
         }
         if(algorithm == "PGD"){
             V <- .positive(V - eta * (-2 * t(pM * X) %*% U +

@@ -1,6 +1,6 @@
 VERSION 1.1.11
 ------------------------
-   o Debug in NTF(), when the init="ALS"
+   o Debug in NTF() and NTD(), (when the init="ALS")
 
 VERSION 1.1.10
 ------------------------
