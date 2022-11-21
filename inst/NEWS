@@ -1,3 +1,7 @@
+VERSION 1.1.11
+------------------------
+   o Debug in NTF(), when the init="ALS"
+
 VERSION 1.1.10
 ------------------------
    o Inf/-Inf/NaN/NA is replaced by machine epsilon in NTF()

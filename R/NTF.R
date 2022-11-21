@@ -295,14 +295,9 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
                     A[[n]] <- A[[n]][orderA, ]
                 }
             } else if (init == "ALS") {
-                Xn <- cs_unfold(X, m = n)@data
+                Xn <- cs_unfold(X, m = 1)@data
                 res.svd <- svd(Xn)
-                tmpA <- .positive(res.svd$u[seq(rank), ])
-                if(rank == 1){
-                    A[[n]] <- t(tmpA)
-                }else{
-                    A[[n]] <- tmpA
-                }
+                A[[n]] <- t(.positive(res.svd$v[, seq(rank)]))
                 orderA <- order(sapply(res.svd$d[seq(rank)], function(x) {
                     norm(as.matrix(x), "F")
                 }), decreasing = TRUE)
