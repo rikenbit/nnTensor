@@ -274,7 +274,7 @@ NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
             })
         } else if (init == "ALS") {
             sapply(modes, function(n) {
-                Xn <- cs_unfold(X, m = 1)@data
+                Xn <- cs_unfold(X, m = n)@data
                 res.svd <- svd(Xn)
                 An <- t(.positive(res.svd$v[, seq(rank[n])]))
                 A[[n]] <<- t(apply(An, 1, function(x){
