@@ -15,7 +15,7 @@ NTF(X, M=NULL, pseudocount=.Machine$double.eps, initA=NULL,
   fixA=FALSE, L1_A=1e-10, L2_A=1e-10, rank = 3,
   algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
     "HALS", "Alpha-HALS", "Beta-HALS", "Alpha", "Beta"),
-  init = c("NMF", "ALS", "Random"), Alpha = 1,
+  init = c("NMF", "ABS-SVD", "ALS", "Random"), Alpha = 1,
   Beta = 2, thr = 1e-10, num.iter = 100, viz = FALSE,
   figdir = NULL, verbose = FALSE)
 }
@@ -56,7 +56,7 @@ NTF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS
 (Default: "Frobenius").
 }
   \item{init}{
-The initialization algorithms. "NMF", "ALS", and "Random" are available
+The initialization algorithms. "NMF", "ABS-SVD", "ALS", and "Random" are available
 (Default: "NMF").
 }
   \item{Alpha}{
