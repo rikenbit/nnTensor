@@ -61,10 +61,6 @@ References
 - **Exponent term depending on Beta parameter**
   - M. Nakano et al., (2010). Convergence-guaranteed multiplicative algorithms for nonnegative matrix factorization with Beta-divergence. IEEE Workshop on Machine Learning for Signal Processing
 
-## License
-Copyright (c) 2018 Koki Tsuyuzaki and Laboratory for Bioinformatics Research, RIKEN Center for Biosystems Dynamics Reseach
-Released under the [Artistic License 2.0](https://www.perlfoundation.org/artistic-license-20.html).
-
 ## Authors
 - Koki Tsuyuzaki
 - Manabu Ishii
