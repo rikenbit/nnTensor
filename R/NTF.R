@@ -208,10 +208,10 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (viz && is.null(figdir) && N == 3) {
         plotTensor3D(X_bar)
     }
-    names(RecError) <- c("offset", 1:(iter-1))
-    names(TrainRecError) <- c("offset", 1:(iter-1))
-    names(TestRecError) <- c("offset", 1:(iter-1))
-    names(RelChange) <- c("offset", 1:(iter-1))
+    names(RecError) <- c("offset", seq_len(iter-1))
+    names(TrainRecError) <- c("offset", seq_len(iter-1))
+    names(TestRecError) <- c("offset", seq_len(iter-1))
+    names(RelChange) <- c("offset", seq_len(iter-1))
 
     # normalization
     S <- apply(A[[N]], 1, function(an){

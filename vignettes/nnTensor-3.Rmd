@@ -1,0 +1,207 @@
+---
+title: "3. Non-negative Tensor Factorization (`NTF` and `NTD`)"
+author:
+- name: Koki Tsuyuzaki
+  affiliation: Laboratory for Bioinformatics Research,
+    RIKEN Center for Biosystems Dynamics Research
+  email: k.t.the-answer@hotmail.co.jp
+- name: Itoshi Nikaido
+  affiliation: Laboratory for Bioinformatics Research,
+    RIKEN Center for Biosystems Dynamics Research
+date: "`r Sys.Date()`"
+bibliography: bibliography.bib
+package: nnTensor
+output: rmarkdown::html_vignette
+vignette: |
+  %\VignetteIndexEntry{3. Non-negative Tensor Factorization (`NTF` and `NTD`)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Introduction
+
+In this vignette we consider approximating a non-negative tensor as a product of multiple non-negative low-rank matrices (a.k.a., factor matrices) and a core tensor.
+
+Test data available from `toyModel`. Here, we set two datasets to simulate different situations.
+
+```{r data, echo=TRUE}
+library("nnTensor")
+X_CP <- toyModel("CP")
+X_Tucker <- toyModel("Tucker")
+```
+
+In the first case, you will see that there are four small blocks in the diagonal direction of the data tensor.
+
+```{r plot_data, echo=TRUE, fig.height=4, fig.width=4}
+plotTensor3D(X_CP)
+```
+
+In the second case, you will see that there are six long blocks in the data tensor.
+
+```{r plot_data2, echo=TRUE, fig.height=4, fig.width=4}
+plotTensor3D(X_Tucker)
+```
+
+# NTF
+
+To decompose a non-negative tensor ($\mathcal{X}$), non-negative CP decomposition (a.k.a. non-negative tensor factorization; NTF [@ntf1; @ntf2; @ntf3]) can be applied. NTF appoximates $\mathcal{X}$ ($N \times M \times L$) as the mode-product of a core tensor $S$ ($J \times J \times J$) and factor matrices $A_1$ ($J \times N$), $A_2$ ($J \times M$), and $A_3$ ($J \times L$).
+
+$$
+\mathcal{X} \approx \mathcal{S} \times_{1} A_1 \times_{2} A_2 \times_{3} A_3\ \mathrm{s.t.}\ \mathcal{S} \geq 0, A_{k} \geq 0\ (k=1 \ldots 3)
+$$
+
+Note that \times_{k} is the mode-$k$ product [@amari] and the core tensor $S$ has non-negative values only in the diagonal element.
+
+NTF can be performed as follows:
+
+```{r ntf_cp, echo=TRUE}
+set.seed(123456)
+out_NTF_CP <- NTF(X_CP, algorithm="KL", rank=4)
+str(out_NTF_CP, 2)
+```
+As same as other matrix factorization methods, the values of reconstruction error and relative error indicate that the optimization is converged.
+
+```{r conv_ntf_cp, echo=TRUE, fig.height=4, fig.width=8}
+layout(t(1:2))
+plot(log10(out_NTF_CP$RecError[2:101]), type="b", main="Reconstruction Error")
+plot(log10(out_NTF_CP$RelChange[2:101]), type="b", main="Relative Change")
+```
+
+By using `recTensor`, user can easily reconstruct the data from core tensor and factor matrices as follows.
+
+```{r rec_ntf_cp, echo=TRUE, fig.height=4, fig.width=8}
+recX_CP <- recTensor(out_NTF_CP$S, out_NTF_CP$A, idx=1:3)
+layout(t(1:2))
+plotTensor3D(X_CP)
+plotTensor3D(recX_CP)
+```
+
+When applying `NTF` against the first data, we can see that the four blocks are properly reconstrcted. Next, we apply `NTF` aginst the second data.
+
+```{r ntf_tucker, echo=TRUE}
+set.seed(123456)
+out_NTF_Tucker <- NTF(X_Tucker, algorithm="KL", rank=4)
+str(out_NTF_Tucker, 2)
+```
+
+```{r conv_ntf_tucker, echo=TRUE, fig.height=4, fig.width=8}
+layout(t(1:2))
+plot(log10(out_NTF_Tucker$RecError[2:101]), type="b", main="Reconstruction Error")
+plot(log10(out_NTF_Tucker$RelChange[2:101]), type="b", main="Relative Change")
+```
+
+Unlike with the first data, the second data shows that `NTF` does not work.
+
+```{r rec_ntf_tucker, echo=TRUE, fig.height=4, fig.width=8}
+recX_Tucker <- recTensor(out_NTF_Tucker$S, out_NTF_Tucker$A, idx=1:3)
+layout(t(1:2))
+plotTensor3D(X_Tucker)
+plotTensor3D(recX_Tucker)
+```
+
+# NTD
+
+Next, we introduce another type of non-negative tensor decomposition method, non-negative Tucker decomposition (NTD [@ntd1; @ntd2; @ntd3; @ntd4]). The difference with the NTF is that different ranks can be specified for factor matrices such as $A_1$ ($J1 \times N$), $A_2$ ($J2 \times M$), and $A_3$ ($J3 \times L$) and that the core tensor can have non-negative values in the non-diagonal elements. This degree of freedom will show that NTD fits the second set of data well.
+
+```{r ntd, echo=TRUE}
+set.seed(123456)
+out_NTD <- NTD(X_Tucker, rank=c(3,4,5))
+str(out_NTD, 2)
+```
+
+```{r conv_ntd, echo=TRUE, fig.height=4, fig.width=8}
+layout(t(1:2))
+plot(out_NTD$RecError[2:101], type="b", main="Reconstruction Error")
+plot(out_NTD$RelChange[2:101], type="b", main="Relative Change")
+```
+
+```{r rec_ntd_tucker, echo=TRUE, fig.height=4, fig.width=8}
+recX_Tucker2 <- recTensor(out_NTD$S, out_NTD$A, idx=1:3)
+layout(t(1:2))
+plotTensor3D(X_Tucker)
+plotTensor3D(recX_Tucker2)
+```
+
+# NTD-2
+
+NTD-2 extracts two factor matrices from two modes of a non-negative third-order tensor. By specifying two values against `rank` and `modes`, NTD-2 can be easily performed as follows. For mode not specified, a unit matrix is assigned instead.
+
+```{r ntd2, echo=TRUE}
+set.seed(123456)
+out_NTD2_1 <- NTD(X_Tucker, rank=c(3,4), modes=1:2)
+out_NTD2_2 <- NTD(X_Tucker, rank=c(3,5), modes=c(1,3))
+out_NTD2_3 <- NTD(X_Tucker, rank=c(4,5), modes=2:3)
+```
+
+```{r conv_ntd2, echo=TRUE, fig.height=12, fig.width=8}
+layout(rbind(1:2, 3:4, 5:6))
+plot(out_NTD2_1$RecError[2:101], type="b", main="Reconstruction Error\nNTD-2 (mode=1:2)")
+plot(out_NTD2_1$RelChange[2:101], type="b", main="Relative Change\nNTD-2 (mode=1:2)")
+plot(out_NTD2_2$RecError[2:101], type="b", main="Reconstruction Error\nNTD-2 (mode=c(1,3))")
+plot(out_NTD2_2$RelChange[2:101], type="b", main="Relative Change\nNTD-2 (mode=c(1,3))")
+plot(out_NTD2_3$RecError[2:101], type="b", main="Reconstruction Error\nNTD-2 (mode=2:3)")
+plot(out_NTD2_3$RelChange[2:101], type="b", main="Relative Change\nNTD-2 (mode=2:3)")
+```
+
+```{r rec_ntd_tucker2, echo=TRUE, fig.height=8, fig.width=8}
+recX_Tucker2_1 <- recTensor(out_NTD2_1$S, out_NTD2_1$A, idx=1:3)
+recX_Tucker2_2 <- recTensor(out_NTD2_2$S, out_NTD2_2$A, idx=1:3)
+recX_Tucker2_3 <- recTensor(out_NTD2_3$S, out_NTD2_3$A, idx=1:3)
+layout(rbind(1:2, 3:4))
+plotTensor3D(X_Tucker)
+plotTensor3D(recX_Tucker2_1)
+plotTensor3D(recX_Tucker2_2)
+plotTensor3D(recX_Tucker2_3)
+```
+
+# NTD-1
+
+NTD-1 extracts a factor matrix from only one mode of a non-negative third-order tensor. By specifying only one value against `rank` and `modes`, NTD-1 can be easily performed as follows. For modes not specified, two unit matrices is assigned instead.
+
+```{r ntd1, echo=TRUE}
+set.seed(123456)
+out_NTD1_1 <- NTD(X_Tucker, rank=3, modes=1)
+out_NTD1_2 <- NTD(X_Tucker, rank=4, modes=2)
+out_NTD1_3 <- NTD(X_Tucker, rank=5, modes=3)
+```
+
+```{r conv_ntd1, echo=TRUE, fig.height=12, fig.width=8}
+layout(rbind(1:2, 3:4, 5:6))
+plot(out_NTD1_1$RecError[2:101], type="b", main="Reconstruction Error\nNTD-1 (mode=1:2)")
+plot(out_NTD1_1$RelChange[2:101], type="b", main="Relative Change\nNTD-1 (mode=1:2)")
+plot(out_NTD1_2$RecError[2:101], type="b", main="Reconstruction Error\nNTD-1 (mode=c(1,3))")
+plot(out_NTD1_2$RelChange[2:101], type="b", main="Relative Change\nNTD-1 (mode=c(1,3))")
+plot(out_NTD1_3$RecError[2:101], type="b", main="Reconstruction Error\nNTD-1 (mode=2:3)")
+plot(out_NTD1_3$RelChange[2:101], type="b", main="Relative Change\nNTD-1 (mode=2:3)")
+```
+
+```{r rec_ntd_tucker1, echo=TRUE, fig.height=8, fig.width=8}
+recX_Tucker2_1 <- recTensor(out_NTD1_1$S, out_NTD1_1$A, idx=1:3)
+recX_Tucker2_2 <- recTensor(out_NTD1_2$S, out_NTD1_2$A, idx=1:3)
+recX_Tucker2_3 <- recTensor(out_NTD1_3$S, out_NTD1_3$A, idx=1:3)
+layout(rbind(1:2, 3:4))
+plotTensor3D(X_Tucker)
+plotTensor3D(recX_Tucker2_1)
+plotTensor3D(recX_Tucker2_2)
+plotTensor3D(recX_Tucker2_3)
+```
+
+# Higher-order tensor decomposition
+
+`NTF` and `NTD` can also be applied to non-negative higher-order tensors like follows.
+
+```{r data2, echo=TRUE}
+library("nnTensor")
+library("rTensor")
+X_Higher <- as.tensor(array(runif(3*4*5*6*7), dim=c(3,4,5,6,7)))
+out_NTF_Higher <- NTF(X_Higher, rank=4)
+out_NTD_Higher <- NTD(X_Higher, rank=c(1,2,1,2,3))
+```
+
+# Session Information {.unnumbered}
+
+```{r sessionInfo, echo=FALSE}
+sessionInfo()
+```
+
+# References

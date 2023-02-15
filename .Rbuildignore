@@ -1,5 +1,11 @@
 ^\.github$
-^README\.md$
-^paper$
-^Dockerfile$
+^\.git$
+^.*\.Rproj$
+^\.Rproj\.user$
 ^LICENSE\.md$
+^README\.md$
+^cran-comments\.md$
+^CRAN-SUBMISSION$
+^.*\.Rhistory$
+^Dockerfile$
+^paper$

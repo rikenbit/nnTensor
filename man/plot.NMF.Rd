@@ -9,22 +9,6 @@ Plot function of the result of NMF function
 \description{
 Only if J is specified as a vector longer than 1, this function will be active.
 }
-\usage{
-plot(x, ...)
-}
-
-\arguments{
-  \item{x}{
-The result of NMF function (NMF class).
-}
-  \item{...}{
-Optional parameter for plot.
-}
-}
-
-\value{
-A ggplot will be gerarated.
-}
 
 \references{
 Jean-Philippe Brunet. et. al., (2004). Metagenes and molecular pattern discovery using matrix factorization. \emph{PNAS}
@@ -48,7 +32,7 @@ Patrik O. Hoyer (2004). Non-negative Matrix Factorization with Sparseness Constr
 \author{Koki Tsuyuzaki}
 
 \examples{
-plot.NMF
+methods(class = "NMF")
 }
 
 \keyword{methods}

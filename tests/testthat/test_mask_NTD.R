@@ -63,17 +63,17 @@ expect_true(rev(out9$TestRecError)[1] != rev(out18$TestRecError)[1])
 
 
 
-out19_1 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="Frobenius", num.iter=2)
-out19_2 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="Frobenius", init="ALS", num.iter=2)
-out19_3 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="Frobenius", init="Random", num.iter=2)
-out20 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="KL", num.iter=2)
-out21 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="IS", num.iter=2)
-out22 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="Pearson", num.iter=2)
-out23 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="Hellinger", num.iter=2)
-out24 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="Neyman", num.iter=2)
-out25 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="Alpha", num.iter=2)
-out26 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="Beta", num.iter=2)
-out27 <- NTD(X, M=M1, rank=c(2,3,1), algorithm="NMF",
+out19_1 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="Frobenius", num.iter=2)
+out19_2 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="Frobenius", init="ALS", num.iter=2)
+out19_3 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="Frobenius", init="Random", num.iter=2)
+out20 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="KL", num.iter=2)
+out21 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="IS", num.iter=2)
+out22 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="Pearson", num.iter=2)
+out23 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="Hellinger", num.iter=2)
+out24 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="Neyman", num.iter=2)
+out25 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="Alpha", num.iter=2)
+out26 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="Beta", num.iter=2)
+out27 <- NTD(X, M=M1, rank=c(2,3,4), algorithm="NMF",
 	nmf.algorithm="Frobenius", num.iter=3, num.iter2=2)
 
 expect_true(rev(out1_1$TestRecError)[1] != rev(out19_1$TestRecError)[1])

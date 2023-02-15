@@ -1,0 +1,136 @@
+---
+title: "1. Non-negative Matrix Factorization (`NMF` and `NMTF`)"
+author:
+- name: Koki Tsuyuzaki
+  affiliation: Laboratory for Bioinformatics Research,
+    RIKEN Center for Biosystems Dynamics Research
+  email: k.t.the-answer@hotmail.co.jp
+- name: Itoshi Nikaido
+  affiliation: Laboratory for Bioinformatics Research,
+    RIKEN Center for Biosystems Dynamics Research
+date: "`r Sys.Date()`"
+bibliography: bibliography.bib
+package: nnTensora
+output: rmarkdown::html_vignette
+vignette: |
+  %\VignetteIndexEntry{1. Non-negative Matrix Factorization (`NMF` and `NMTF`)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Introduction
+
+In this vignette we consider approximating a non-negative matrix as a product of multiple non-negative low-rank matrices (a.k.a., factor matrices).
+
+Test data is available from `toyModel`.
+
+```{r data, echo=TRUE}
+library("nnTensor")
+X <- toyModel("NMF")
+```
+
+You will see that there are five blocks in the data matrix as follows.
+
+```{r data2, echo=TRUE, fig.height=4, fig.width=4}
+image(X, main="Original Data")
+```
+
+# NMF
+
+Here, we consider the approximation of the non-negative data matrix $X$ ($N \times M$) as the matrix product of $U$ ($N \times J$) and $V$ ($M \times J$):
+
+$$
+X \approx U V' \ \mathrm{s.t.}\ U \geq 0, V \geq 0
+$$
+
+This is known as non-negative matrix factorization (NMF [@nmf; @amari]) and multiplicative update (MU) rule often used to achieve this factorization.
+
+## Basic Usage
+
+In NMF, the rank parameter $J$ ($\leq \min(N,M)$) is needed to be set in advance. Other settings such as the number of MU iterations (`num.iter`) or factorization algorithm (`algorithm`) are also available. For the details of arguments of NMF, see `?NMF`. After the calculation, various objects are returned by `NMF`.
+
+```{r nmf, echo=TRUE}
+set.seed(123456)
+out_NMF <- NMF(X, J=5)
+str(out_NMF, 2)
+```
+
+The reconstruction error (`RecError`) and relative error (`RelChange`, the amount of change from the reconstruction error in the previous step) can be used to diagnose whether the calculation is converging or not.
+
+```{r conv_nmf, echo=TRUE, fig.height=4, fig.width=8}
+layout(t(1:2))
+plot(log10(out_NMF$RecError[2:101]), type="b", main="Reconstruction Error")
+plot(log10(out_NMF$RelChange[2:101]), type="b", main="Relative Change")
+```
+
+The product of $U$ and $V$ shows that the original data can be well-recovered by `NMF`.
+
+```{r rec_nmf, echo=TRUE, fig.height=4, fig.width=8}
+recX <- out_NMF$U %*% t(out_NMF$V)
+layout(t(1:2))
+image(X, main="Original Data")
+image(recX, main="Reconstructed Data (NMF)")
+```
+
+## Rank Estimation of NMF
+
+NMF requires the rank paramter $J$ in advance. However, setting optimal values without prior knowledge and external measures is a basically difficult problem. In `nnTensor`, $14$ of evaluation scores [@ccc; @condition; @perm; @dispersion; @sparseness1; @volume; @singular; @rss; @sparseness2] to estimate rank parameter have been implemented in the `NMF`. If multiple rank parameters are set, the evaluation score is calculated within that range, and we can estimate the optimal value from the large or small values and rapidly changing slopes. For the details, see [@ccc; @condition; @perm; @dispersion; @sparseness1; @volume; @singular; @rss; @sparseness2].
+
+Note that here we run with a small `num.iter` to demonstrate the rank estimation with the minimum computation time. When users try it on their own data, this option should be removed.
+
+```{r nmf2, echo=TRUE}
+set.seed(123456)
+out_NMF2 <- NMF(X, J=1:10, num.iter=1)
+str(out_NMF2, 2)
+```
+
+Scores in the data matrix and random matrices are plotted at once. Red and green lines are plotted by the original matrix data and the randomly permutated matrix from the original data matrix, respectively.
+
+```{r plot_nmf2, echo=TRUE, fig.height=4, fig.width=12}
+plot(out_NMF2)
+```
+
+# NMTF
+
+As a different factorization form from NMF, non-negative tri-factrozation (NMTF [@nmtf1; @nmtf2; @nmtf3]), which decomposes a non-negative matrix to three factor matrices, can be considered. NMTF approximates the non-negative data matrix $X$ ($N \times M$) as the matrix product of $U$ ($N \times J1$), $S$ ($J1 \times J2$), and $V$ ($M \times J2$) as follows.
+
+$$
+X \approx U S V' \ \mathrm{s.t.}\ U \geq 0, S \geq 0, V \geq 0
+$$
+
+As same as NMF, these factor matrices are also optimized by MU rule [@nmtf1; @nmtf2; @nmtf3]. Note that $S$ is not necessarily a diagonal matrix and often contains non-diagonal elements with non-zero elements.
+
+## Basic Usage
+
+Unlike NMF, NMTF sets two rank parameters $J1$ ($\leq N$) and $J2$ ($\leq M$) for $U$ and $V$, respectively. These values are separately set in advance. For example, here $4$ and $5$ are set as follows.
+
+```{r nmtf, echo=TRUE}
+set.seed(123456)
+out_NMTF <- NMTF(X, rank=c(4,5))
+str(out_NMTF, 2)
+```
+
+As same as NMF, the values of reconstruction error and relative error indicate that the optimization is converged.
+
+```{r conv_nmtf, echo=TRUE, fig.height=4, fig.width=8}
+layout(t(1:2))
+plot(log10(out_NMTF$RecError[2:101]), type="b", main="Reconstruction Error")
+plot(log10(out_NMTF$RelChange[2:101]), type="b", main="Relative Change")
+```
+
+The reconstructed matrix ($USV'$) shows that the features of the data matrix are well captured by NMTF.
+
+```{r rec_nmtf, echo=TRUE, fig.height=4, fig.width=8}
+recX2 <- out_NMTF$U %*% out_NMTF$S %*% t(out_NMTF$V)
+layout(t(1:2))
+image(X, main="Original Data")
+image(recX2, main="Reconstructed Data (NMTF)")
+```
+
+# Session Information {.unnumbered}
+
+```{r sessionInfo, echo=FALSE}
+sessionInfo()
+```
+
+# References

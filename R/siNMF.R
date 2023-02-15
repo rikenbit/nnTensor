@@ -91,10 +91,10 @@ siNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (viz && is.null(figdir)) {
         .imageplot_siNMF(X, W, H)
     }
-    names(RecError) <- c("offset", 1:(iter-1))
-    names(TrainRecError) <- c("offset", 1:(iter-1))
-    names(TestRecError) <- c("offset", 1:(iter-1))
-    names(RelChange) <- c("offset", 1:(iter-1))
+    names(RecError) <- c("offset", seq_len(iter-1))
+    names(TrainRecError) <- c("offset", seq_len(iter-1))
+    names(TestRecError) <- c("offset", seq_len(iter-1))
+    names(RelChange) <- c("offset", seq_len(iter-1))
     return(list(W = W, H = H,
         RecError = RecError,
         TrainRecError = TrainRecError,

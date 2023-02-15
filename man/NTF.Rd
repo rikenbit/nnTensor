@@ -22,17 +22,17 @@ NTF(X, M=NULL, pseudocount=.Machine$double.eps, initA=NULL,
 
 \arguments{
   \item{X}{
-The input tensor which has I1, I2, and I3 dimensions.
+K-order input tensor which has I_1, I_2, ..., and I_K dimensions.
 }
   \item{M}{
-The mask tensor which has I1, I2, and I3 dimensions. If the mask tensor has
+K-order mask tensor which has I_1, I_2, ..., and I_K dimensions. If the mask tensor has
 missing values, specify the element as 0 (otherwise 1).
 }
   \item{pseudocount}{
 The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).
 }
   \item{initA}{
-A list containing the initial values of multiple factor matrices
+A list containing the initial values of K factor matrices
 (A_k, <Ik*Jk>, k=1..K, Default: NULL).
 }
   \item{fixA}{
@@ -48,8 +48,7 @@ so should be set as 0.
 Paramter for L2 regularitation (Default: 1e-10).
 }
   \item{rank}{
-The number of low-dimension in each mode (J1=J2=J3, J1<I1, J2<I2, J3 < I3)
-(Default: 3).
+The number of low-dimension in each mode (Default: 3).
 }
   \item{algorithm}{
 NTF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "HALS", "Alpha-HALS", "Beta-HALS", "Alpha", and "Beta" are available
@@ -84,8 +83,8 @@ If verbose == TRUE, Error change rate is generated in console windos.
 }
 
 \value{
-  S : Tensor object, which is defined as S4 class of rTensor package.
-  A : A list containing three factor matrices.
+  S : K-order tensor object, which is defined as S4 class of rTensor package.
+  A : A list containing K factor matrices.
   RecError : The reconstruction error between data tensor and reconstructed
   tensor from S and A.
   TrainRecError : The reconstruction error calculated by training set

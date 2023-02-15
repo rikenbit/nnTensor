@@ -1,0 +1,158 @@
+---
+title: "2. Simultaneous Non-negative Matrix Factorization (`siNMF` and `jNMF`)"
+author:
+- name: Koki Tsuyuzaki
+  affiliation: Laboratory for Bioinformatics Research,
+    RIKEN Center for Biosystems Dynamics Research
+  email: k.t.the-answer@hotmail.co.jp
+- name: Itoshi Nikaido
+  affiliation: Laboratory for Bioinformatics Research,
+    RIKEN Center for Biosystems Dynamics Research
+date: "`r Sys.Date()`"
+bibliography: bibliography.bib
+package: nnTensor
+output: rmarkdown::html_vignette
+vignette: |
+  %\VignetteIndexEntry{2. Simultaneous Non-negative Matrix Factorization (`siNMF` and `jNMF`)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Introduction
+
+In this vignette we consider approximating multiple non-negative matrices as a product of multiple non-negative low-rank matrices (a.k.a., factor matrices).
+
+Test data available from `toyModel`. Here, we set two datasets to simulate different situations.
+
+```{r data, echo=TRUE}
+library("nnTensor")
+X_Easy <- toyModel("siNMF_Easy")
+X_Hard <- toyModel("siNMF_Hard")
+```
+
+In the easy case, you will see that there are three blocks in each matrix. These are set up so that there is a block with a large value in a common row position.
+
+```{r plot_data, echo=TRUE, fig.height=2.7, fig.width=8}
+layout(t(1:3))
+image(X_Easy$X1, main="X1")
+image(X_Easy$X2, main="X2")
+image(X_Easy$X3, main="X3")
+```
+
+In the difficult case, you will see that there are three blocks in each matrix but there are also some small matrices to model specific patterns that are not shared across these data matrices.
+
+```{r plot_data2, echo=TRUE, fig.height=2.7, fig.width=8}
+layout(t(1:3))
+image(X_Hard$X1, main="X1")
+image(X_Hard$X2, main="X2")
+image(X_Hard$X3, main="X3")
+```
+
+# siNMF
+
+To decompose $K$ non-negative matrices ($X_{1}, X_{2}, \ldots X_{K}$) simultaneously, simultaneous Non-negative Matrix Factorization (siNMF [@sinmf1; @sinmf2; @sinmf3]) can be applied. siNMF approximates $k$-th non-negative data matrix $X_{k}$ ($N \times M_{k}$) as the matrix product of $W$ ($N \times J$) and $H_{k}$ ($J \times M_{k}$) as follows.
+
+$$
+X_{k} \approx W H_{k} \ \mathrm{s.t.}\ W \geq 0, H_{k} \geq 0\ (k=1 \ldots K)
+$$
+
+Note that $W$ is shared by $K$ data matrices but $H_{k}$ is specific in $k$-th data matrix.
+
+siNMF can be performed as follows.
+
+```{r sinmf_easy, echo=TRUE}
+set.seed(123456)
+out_siNMF_Easy <- siNMF(X_Easy, algorithm="KL", J=3)
+str(out_siNMF_Easy, 2)
+```
+
+As same as NMF, the values of reconstruction error and relative error indicate that the optimization is converged.
+
+```{r conv_sinmf_easy, echo=TRUE, fig.height=4, fig.width=8}
+layout(t(1:2))
+plot(log10(out_siNMF_Easy$RecError[2:101]), type="b", main="Reconstruction Error")
+plot(log10(out_siNMF_Easy$RelChange[2:101]), type="b", main="Relative Change")
+```
+
+From the common factor matrix $W$ and specific matrices $H_{1}$, $H_{2}$, and  $H_{3}$, each matrix can be reconstructed as follows.
+
+```{r rec_sinmf_easy, echo=TRUE, fig.height=5.3, fig.width=8}
+recX1 <- out_siNMF_Easy$W %*% t(out_siNMF_Easy$H[[1]])
+recX2 <- out_siNMF_Easy$W %*% t(out_siNMF_Easy$H[[2]])
+recX3 <- out_siNMF_Easy$W %*% t(out_siNMF_Easy$H[[3]])
+
+layout(rbind(1:3, 4:6))
+image(X_Easy$X1, main="Original Data\n(X1)")
+image(X_Easy$X2, main="Original Data\n(X2)")
+image(X_Easy$X3, main="Original Data\n(X3)")
+image(recX1, main="Reconstructed Data\n(X1, siNMF)")
+image(recX2, main="Reconstructed Data\n(X2, siNMF)")
+image(recX3, main="Reconstructed Data\n(X3, siNMF)")
+```
+
+siNMF implicitly assumes that all data matrices always contain the same number of common patterns. However, in real data, this assumption is sometimes too strong. For example, when siNMF is applied to the difficult case above, we can find that the detection of common patterns is hampered by the influence of non-common patterns.
+
+```{r sinmf_hard, echo=TRUE}
+set.seed(123456)
+out_siNMF_Hard <- siNMF(X_Hard, algorithm="KL", J=3)
+str(out_siNMF_Hard, 2)
+```
+
+```{r rec_sinmf_hard, echo=TRUE, fig.height=5.3, fig.width=8}
+recX1 <- out_siNMF_Hard$W %*% t(out_siNMF_Hard$H[[1]])
+recX2 <- out_siNMF_Hard$W %*% t(out_siNMF_Hard$H[[2]])
+recX3 <- out_siNMF_Hard$W %*% t(out_siNMF_Hard$H[[3]])
+layout(rbind(1:3, 4:6))
+image(X_Hard$X1, main="Original Data\n(X1)")
+image(X_Hard$X2, main="Original Data\n(X2)")
+image(X_Hard$X3, main="Original Data\n(X3)")
+image(recX1, main="Reconstructed Data\n(X1, siNMF)")
+image(recX2, main="Reconstructed Data\n(X2, siNMF)")
+image(recX3, main="Reconstructed Data\n(X3, siNMF)")
+```
+
+# jNMF
+
+To overcome the above weakness of siNMF, we next introduce joint NMF (jNMF [@jnmf]). In jNMF, a common factor matrix $W$, multiple specific factor matrices $V_{1}$, $V_{2}$, ..., $V_{K}$ ($K$ is the number of matrices), and multiple specific factor matrices $H_{1}$, $H_{2}$, ..., $H_{K}$ are estimated simultaneously.
+
+$$
+X_{k} \approx (W + V_{k})\ H_{k} \ \mathrm{s.t.}\ W \geq 0, V_{k} \geq 0, H_{k} \geq 0\ (k=1 \ldots K)
+$$
+
+jNMF can be performed as follows.
+
+```{r jnmf_hard, echo=TRUE}
+out_jNMF_Hard <- jNMF(X_Hard, algorithm="KL", J=3)
+str(out_jNMF_Hard, 2)
+```
+
+Compared to siNMF, jNMF successfully avoids the influence of specific patterns and focuses on only common patterns.
+
+```{r rec_jnmf_hard, echo=TRUE, fig.height=8, fig.width=8}
+recX1_common <- out_jNMF_Hard$W %*% t(out_jNMF_Hard$H[[1]])
+recX2_common <- out_jNMF_Hard$W %*% t(out_jNMF_Hard$H[[2]])
+recX3_common <- out_jNMF_Hard$W %*% t(out_jNMF_Hard$H[[3]])
+
+recX1_specific <- out_jNMF_Hard$V[[1]] %*% t(out_jNMF_Hard$H[[1]])
+recX2_specific <- out_jNMF_Hard$V[[2]] %*% t(out_jNMF_Hard$H[[2]])
+recX3_specific <- out_jNMF_Hard$V[[3]] %*% t(out_jNMF_Hard$H[[3]])
+
+layout(rbind(1:3, 4:6, 7:9))
+image(X_Hard$X1, main="Original Data\n(X1)")
+image(X_Hard$X2, main="Original Data\n(X2)")
+image(X_Hard$X3, main="Original Data\n(X3)")
+image(recX1_common, main="Reconstructed Data\n(Common Pattern in X1, jNMF)")
+image(recX2_common, main="Reconstructed Data\n(Common Pattern in X2, jNMF)")
+image(recX3_common, main="Reconstructed Data\n(Common Pattern in X3, jNMF)")
+image(recX1_specific, main="Reconstructed Data\n(Specific Pattern in X1, jNMF)")
+image(recX2_specific, main="Reconstructed Data\n(Specific Pattern in X2, jNMF)")
+image(recX3_specific, main="Reconstructed Data\n(Specific Pattern in X3, jNMF)")
+```
+
+# Session Information {.unnumbered}
+
+```{r sessionInfo, echo=FALSE}
+sessionInfo()
+```
+
+# References

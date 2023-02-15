@@ -39,7 +39,7 @@ plotTensor2D <- function(X = NULL, method=c("sd", "mad"),
         }
     }
     # Color schema
-    col <- rep(0, length=length(allpoints))
+    col <- rep("#00000000", length=length(allpoints))
     col[usingpoints] <- 6
     # Plot
     scatter2D(coordinate[,1], coordinate[,2],

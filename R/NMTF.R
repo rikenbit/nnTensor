@@ -75,8 +75,8 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     if (viz && is.null(figdir)) {
             .multiImagePlots(list(X, X_bar, U, S, t(V)))
     }
-    names(RecError) <- c("offset", 1:(iter-1))
-    names(RelChange) <- c("offset", 1:(iter-1))
+    names(RecError) <- c("offset", seq_len(iter-1))
+    names(RelChange) <- c("offset", seq_len(iter-1))
     # Output
     list(U = U, S = S, V = V, rank = rank,
         RecError = RecError, RelChange = RelChange)

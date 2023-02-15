@@ -1,4 +1,4 @@
-recTensor <- function(S = NULL, A = NULL, idx = 1:3, reverse = FALSE){
+recTensor <- function(S = NULL, A = NULL, idx = seq_along(dim(S)), reverse = FALSE){
     if (is(S)[1] == "Tensor") {
         X_bar <- S
         if(length(dim(S)) > 3){

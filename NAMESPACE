@@ -12,6 +12,8 @@ importFrom(graphics, layout, plot.new)
 importFrom("stats", "as.dist", "cophenetic", "cor", "hclust")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 
+S3method(plot, NMF)
+
 export(
     toyModel,
     NMF,
@@ -23,9 +25,6 @@ export(
     recTensor,
     NTD,
     NTF,
-    plot.NMF,
     GabrielNMF,
     kFoldMaskTensor
 	)
-
-S3method(plot, NMF)

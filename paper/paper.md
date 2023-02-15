@@ -38,7 +38,7 @@ In many cases, the latest tensor decomposition algorithms are implemented in MAT
 \texttt{nnTensor} provides the matrix/decomposition decomposition functions as follows:
 
 - \texttt{NMF}: Non-negative matrix factorization for non-negative matrix [@nonnegative]
-- \texttt{NTF}: Non-negative matrix tri-factorization for non-negative matrix [@nmtf]
+- \texttt{NMTF}: Non-negative matrix tri-factorization for non-negative matrix [@nmtf]
 - \texttt{siNMF}: Simultaneous non-negative matrix factorization for non-negative matrix [@sinmf]
 - \texttt{jNMF}: Joint non-negative matrices factorization for non-negative matrix [@jnmf]
 - \texttt{NTF}: Non-negative tensor factorization for non-negative tensor [@nonnegative]

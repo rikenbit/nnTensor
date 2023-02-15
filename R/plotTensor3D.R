@@ -39,7 +39,7 @@ plotTensor3D <- function(X = NULL, method=c("sd", "mad"),
         }
     }
     # Color schema
-    col <- rep(0, length=length(allpoints))
+    col <- rep("#00000000", length=length(allpoints))
     col[usingpoints] <- 6
     # Plot
     scatter3D(coordinate[,1], coordinate[,2], coordinate[,3], colvar=NULL,

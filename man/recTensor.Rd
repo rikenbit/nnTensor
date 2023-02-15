@@ -9,18 +9,19 @@ Tensor Reconstruction from core tensor (S) and factor matrices (A)
 Combined with plotTensor3D function and the result of NTF or NTD, the reconstructed tesor structure can be visullized.
 }
 \usage{
-recTensor(S = NULL, A = NULL, idx = 1:3, reverse = FALSE)
+recTensor(S = NULL, A = NULL, idx = seq_along(dim(S)), reverse = FALSE)
 }
 
 \arguments{
   \item{S}{
-Tensor object, which is defined as S4 class of rTensor package.
+K-order tensor object, which is defined as S4 class of rTensor package.
 }
   \item{A}{
-A list containing three factor matrices.
+A list containing K factor matrices.
 }
   \item{idx}{
-The direction of mode-n muliplication (Default: 1:3). For example idx=1 is defined. S x_1 A is calculated (x_1 : mode-1 multiplication).
+The direction of mode-n muliplication (Default: 1:K).
+For example idx=1 is defined. S x_1 A is calculated (x_1 : mode-1 multiplication).
  }
   \item{reverse}{
 If reverse = TRUE, t(A[[n]]) is multiplicated to S (Default: FALSE).
