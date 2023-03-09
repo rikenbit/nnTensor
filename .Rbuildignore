@@ -4,6 +4,8 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.md$
+^CONTRIBUTING\.md$
+^CODE_OF_CONDUCT\.md$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
 ^.*\.Rhistory$

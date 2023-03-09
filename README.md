@@ -13,7 +13,8 @@ https://cran.r-project.org/package=nnTensor)
 # nnTensor
 R package for Non-negative Tensor Decomposition
 
-Installation
+## Installation
+
 ======
 ~~~~
 git clone https://github.com/rikenbit/nnTensor/
@@ -25,7 +26,7 @@ library(devtools)
 devtools::install_github("rikenbit/nnTensor")
 ~~~~
 
-References
+## References
 ======
 - **Non-negative Matrix Factorization (NMF)**
   - Lee, D. and Seung, H. Learning the parts of objects by non-negative matrix factorization. Nature 401, 788–791 (1999)
@@ -75,6 +76,12 @@ References
 	- Owen, A. B. et al., Bi-Cross-Validation of the SVD and the Nonnegative Matrix Factorization. The Annals of Applied Statistics, 3(2), 564-594, 2009
 - **Exponent term depending on Beta parameter**
   - Nakano, M. et al., Convergence-guaranteed multiplicative algorithms for nonnegative matrix factorization with Beta-divergence. IEEE MLSP, 283-288, 2010
+
+## Contributing
+
+If you have suggestions for how `nnTensor` could be improved, or want to report a bug, open an issue! We'd love all and any contributions.
+
+For more, check out the [Contributing Guide](CONTRIBUTING.md).
 
 ## Authors
 - Koki Tsuyuzaki

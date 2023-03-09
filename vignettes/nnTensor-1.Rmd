@@ -10,7 +10,7 @@ author:
     RIKEN Center for Biosystems Dynamics Research
 date: "`r Sys.Date()`"
 bibliography: bibliography.bib
-package: nnTensora
+package: nnTensor
 output: rmarkdown::html_vignette
 vignette: |
   %\VignetteIndexEntry{1. Non-negative Matrix Factorization (`NMF` and `NMTF`)}
