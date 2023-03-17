@@ -70,8 +70,8 @@ As same as NMF, the values of reconstruction error and relative error indicate t
 
 ```{r conv_sinmf_easy, echo=TRUE, fig.height=4, fig.width=8}
 layout(t(1:2))
-plot(log10(out_siNMF_Easy$RecError[2:101]), type="b", main="Reconstruction Error")
-plot(log10(out_siNMF_Easy$RelChange[2:101]), type="b", main="Relative Change")
+plot(log10(out_siNMF_Easy$RecError[-1]), type="b", main="Reconstruction Error")
+plot(log10(out_siNMF_Easy$RelChange[-1]), type="b", main="Relative Change")
 ```
 
 From the common factor matrix $W$ and specific matrices $H_{1}$, $H_{2}$, and  $H_{3}$, each matrix can be reconstructed as follows.
