@@ -15,7 +15,6 @@ R package for Non-negative Tensor Decomposition
 
 ## Installation
 
-======
 ~~~~
 git clone https://github.com/rikenbit/nnTensor/
 R CMD INSTALL nnTensor
@@ -27,7 +26,7 @@ devtools::install_github("rikenbit/nnTensor")
 ~~~~
 
 ## References
-======
+
 - **Non-negative Matrix Factorization (NMF)**
   - Lee, D. and Seung, H. Learning the parts of objects by non-negative matrix factorization. Nature 401, 788–791 (1999)
   - Cichocki, A. et al., Nonnegative Matrix and Tensor Factorizations, Wiley, 2009

@@ -8,16 +8,17 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     # Argument check
     algorithm <- match.arg(algorithm)
     init <- match.arg(init)
-    chk <- .checkNTF(X, M, pseudocount, initA, fixA, rank, Alpha, Beta,
+    .checkNTF(X, M, pseudocount, initA, fixA, rank, Alpha, Beta,
         thr, num.iter, viz, figdir, verbose)
-    X <- chk$X
-    M <- chk$M
-    pM <- chk$pM
-    fixA <- chk$fixA
-    N <- chk$N
     # Initialization of An
-    int <- .initNTF(X, N, rank, init, initA, Alpha, Beta,
+    int <- .initNTF(X, M, pseudocount, fixA, rank, init, initA, Alpha, Beta,
         algorithm, thr, verbose)
+    X <- int$X
+    M <- int$M
+    pM <- int$pM
+    M_NA <- int$M_NA
+    fixA <- int$fixA
+    N <- int$N
     A <- int$A
     RecError <- int$RecError
     TrainRecError <- int$TrainRecError
@@ -177,8 +178,8 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         iter <- iter + 1
         X_bar <- recTensor(rep(1, length = rank), A, idx=seq(N))
         RecError[iter] <- .recError(X, X_bar)
-        TrainRecError[iter] <- .recError(M*X, M*X_bar)
-        TestRecError[iter] <- .recError((1-M)*X, (1-M)*X_bar)
+        TrainRecError[iter] <- .recError((1-M_NA+M)*X, (1-M_NA+M)*X_bar)
+        TestRecError[iter] <- .recError((M_NA-M)*X, (M_NA-M)*X_bar)
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
 
         if (viz && !is.null(figdir) && N == 3) {
@@ -233,9 +234,7 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         if(!identical(dim(X), dim(M))){
             stop("Please specify the dimensions of X and M are same")
         }
-    }else{
-        M <- X
-        M@data[] <- 1
+        .checkZeroNA(X, M, type="Tensor")
     }
     stopifnot(is.numeric(pseudocount))
     if(!is.null(initA)){
@@ -253,8 +252,6 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
                 stop("Please specify the length of fixA same as the order of X")
             }
         }
-    }else{
-        fixA <- rep(fixA, length=length(dim(X)))
     }
     stopifnot(is.numeric(rank))
     stopifnot(is.numeric(Alpha))
@@ -269,16 +266,26 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (verbose) {
         cat("Initialization step is running...\n")
     }
-    X <- .pseudocount(X, pseudocount)
-    pM <- .pseudocount(M, pseudocount)
-    N <- length(dim(X))
-    list(X=X, M=M, pM=pM, fixA=fixA, N=N)
 }
 
-.initNTF <- function(X, N, rank, init, initA, Alpha, Beta,
+.initNTF <- function(X, M, pseudocount, fixA, rank, init, initA, Alpha, Beta,
     algorithm, thr, verbose){
+    N <- length(dim(X))
     T1 <- NULL
     E <- NULL
+    fixA <- rep(fixA, length=length(dim(X)))
+    # NA mask
+    M_NA <- X
+    M_NA@data[] <- 1
+    M_NA@data[which(is.na(X@data))] <- 0
+    if(is.null(M)){
+        M <- M_NA
+    }
+    pM <- M
+    # Pseudo count
+    X@data[which(is.na(X@data))] <- pseudocount
+    X <- .pseudocount(X, pseudocount)
+    pM <- .pseudocount(M, pseudocount)
     if(is.null(initA)){
         A <- list()
         length(A) <- N
@@ -369,5 +376,8 @@ NTF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    list(A=A, RecError=RecError, TrainRecError=TrainRecError, TestRecError=TestRecError, RelChange=RelChange, Alpha=Alpha, Beta=Beta, algorithm=algorithm, E=E, T1=T1)
+    list(X=X, M=M, pM=pM, M_NA=M_NA, fixA=fixA, N=N,
+        A=A, RecError=RecError, TrainRecError=TrainRecError,
+        TestRecError=TestRecError, RelChange=RelChange,
+        Alpha=Alpha, Beta=Beta, algorithm=algorithm, E=E, T1=T1)
 }

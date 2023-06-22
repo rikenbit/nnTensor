@@ -1,10 +1,16 @@
+VERSION 1.2.0
+------------------------
+   o kFoldMaskTensor was modified to avoid NA
+   o Vignette for kFoldMaskTensor was added
+   o NMF(), siNMF(), jNMF(), NTF(), and NTD() were modified to allow missing values (NA) in the input matrix/tensor
+
 VERSION 1.1.14
 ------------------------
-o Accepted by JOSS
+   o Accepted by JOSS
 
 VERSION 1.1.13
 ------------------------
-o Vignettes were modified
+   o Vignettes were modified
 
 VERSION 1.1.12
 ------------------------

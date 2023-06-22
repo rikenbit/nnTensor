@@ -1,25 +1,15 @@
 X <- toyModel("NMF")
-M1 <- X
-M2 <- X
-M1[,] <- rbinom(length(M1), 1, 0.5)
-M2[,] <- rbinom(length(M2), 1, 0.5)
+M1 <- kFoldMaskTensor(X, seeds=12345)[[1]]
+M2 <- kFoldMaskTensor(X, seeds=54321)[[1]]
 
+out1 <- NMTF(X, M=M1, J=3, algorithm="Frobenius", num.iter=10)
+out2 <- NMTF(X, M=M1, J=3, algorithm="KL", num.iter=10)
+out3 <- NMTF(X, M=M1, J=3, algorithm="IS", num.iter=10)
+out4 <- NMTF(X, M=M1, J=3, algorithm="ALS", num.iter=10)
+out5 <- NMTF(X, M=M1, J=3, algorithm="PG", num.iter=10)
+out6 <- NMTF(X, M=M1, J=3, algorithm="COD", num.iter=10)
+out7 <- NMTF(X, M=M1, J=3, algorithm="Beta", num.iter=10)
 
-
-out1 <- NMF(X, M=M1, J=3, algorithm="Frobenius", num.iter=10)
-out2 <- NMF(X, M=M1, J=3, algorithm="KL", num.iter=10)
-out3 <- NMF(X, M=M1, J=3, algorithm="IS", num.iter=10)
-out4 <- NMF(X, M=M1, J=3, algorithm="Pearson", num.iter=10)
-out5 <- NMF(X, M=M1, J=3, algorithm="Hellinger", num.iter=10)
-out6 <- NMF(X, M=M1, J=3, algorithm="Neyman", num.iter=10)
-out7 <- NMF(X, M=M1, J=3, algorithm="Alpha", num.iter=10)
-out8 <- NMF(X, M=M1, J=3, algorithm="Beta", num.iter=10)
-out9 <- NMF(X, M=M1, J=3, algorithm="PGD", num.iter=10)
-out10 <- NMF(X, M=M1, J=3, algorithm="Projected", num.iter=10)
-out11 <- NMF(X, M=M1, J=3, algorithm="NHR", num.iter=10)
-out12 <- NMF(X, M=M1, J=3, algorithm="DTPP", num.iter=10)
-out13 <- NMF(X, M=M1, J=3, algorithm="Orthogonal", num.iter=10)
-out14 <- NMF(X, M=M1, J=3, algorithm="OrthReg", num.iter=10)
 
 expect_equivalent(length(out1), 10)
 expect_equivalent(length(out2), 10)
@@ -28,13 +18,6 @@ expect_equivalent(length(out4), 10)
 expect_equivalent(length(out5), 10)
 expect_equivalent(length(out6), 10)
 expect_equivalent(length(out7), 10)
-expect_equivalent(length(out8), 10)
-expect_equivalent(length(out9), 10)
-expect_equivalent(length(out10), 10)
-expect_equivalent(length(out11), 10)
-expect_equivalent(length(out12), 10)
-expect_equivalent(length(out13), 10)
-expect_equivalent(length(out14), 10)
 
 
 

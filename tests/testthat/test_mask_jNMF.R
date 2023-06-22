@@ -1,14 +1,12 @@
 X <- toyModel("siNMF_Hard")
-M1 <- X
-M2 <- X
+M1 <- list()
+M2 <- list()
+length(M1) <- length(X)
+length(M2) <- length(X)
 for(i in seq(length(X))){
-	M1[[i]][] <- 0
-	M2[[i]][] <- 0
-	M1[[i]][] <- rbinom(length(M1[[i]]), 1, 0.5)
-	M2[[i]][] <- rbinom(length(M2[[i]]), 1, 0.5)
+	M1[[i]] <- kFoldMaskTensor(X[[i]], seed=12345)[[i]]
+	M2[[i]] <- kFoldMaskTensor(X[[i]], seed=54321)[[i]]
 }
-
-
 
 out1 <- jNMF(X, M=M1, J=3, algorithm="Frobenius", num.iter=2)
 out2 <- jNMF(X, M=M1, J=3, algorithm="KL", num.iter=2)

@@ -1,4 +1,5 @@
-NMTF <- function(X, pseudocount=.Machine$double.eps,
+NMTF <- function(X, M=NULL,
+    pseudocount=.Machine$double.eps,
     initU=NULL, initS=NULL, initV=NULL,
     fixU=FALSE, fixS=FALSE, fixV=FALSE,
     L1_U=1e-10, L1_S=1e-10, L1_V=1e-10,
@@ -10,17 +11,22 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     viz = FALSE, figdir = NULL, verbose = FALSE){
     # Argument check
     algorithm <- match.arg(algorithm)
-    .checkNMTF(X, pseudocount, initU, initS, initV,
+    .checkNMTF(X, M, pseudocount, initU, initS, initV,
     fixU, fixS, fixV, L1_U, L1_S, L1_V, L2_U, L2_S, L2_V, orthU, orthV,
     rank, Beta, root, thr, num.iter, viz, figdir, verbose)
     # Initizalization
-    int <- .initNMTF(X, pseudocount, rank, initU, initS, initV,
+    int <- .initNMTF(X, M, pseudocount, rank, initU, initS, initV,
     algorithm, Beta, thr, verbose)
     X <- int$X
+    M <- int$M
+    pM <- int$pM
+    M_NA <- int$M_NA
     U <- int$U
     S <- int$S
     V <- int$V
     RecError <- int$RecError
+    TrainRecError <- int$TrainRecError
+    TestRecError <- int$TestRecError
     RelChange <- int$RelChange
     Beta <- int$Beta
     algorithm <- int$algorithm
@@ -32,20 +38,22 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         pre_Error <- .recError(X, X_bar)
         # Update U
         if(!fixU){
-            U <- .updateU(X, U, S, V, L1_U, L2_U, orthU, Beta, root, algorithm)
+            U <- .updateU(X, pM, U, S, V, L1_U, L2_U, orthU, Beta, root, algorithm)
         }
         # Update V
         if(!fixV){
-            V <- .updateV(X, U, S, V, L1_V, L2_V, orthV, Beta, root, algorithm)
+            V <- .updateV(X, pM, U, S, V, L1_V, L2_V, orthV, Beta, root, algorithm)
         }
         # Update S
         if(!fixS){
-            S <- .updateS(X, U, S, V, L1_S, L2_S, Beta, root, algorithm)
+            S <- .updateS(X, pM, U, S, V, L1_S, L2_S, Beta, root, algorithm)
         }
         # After Update U, S, V
         iter <- iter + 1
         X_bar <- U %*% S %*% t(V)
         RecError[iter] <- .recError(X, X_bar)
+        TrainRecError[iter] <- .recError((1-M_NA+M)*X, (1-M_NA+M)*X_bar)
+        TestRecError[iter] <- .recError((M_NA-M)*X, (M_NA-M)*X_bar)
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
         if (viz && !is.null(figdir)) {
             png(filename = paste0(figdir, "/", iter-1, ".png"))
@@ -76,16 +84,27 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
             .multiImagePlots(list(X, X_bar, U, S, t(V)))
     }
     names(RecError) <- c("offset", seq_len(iter-1))
+    names(TrainRecError) <- c("offset", seq_len(iter-1))
+    names(TestRecError) <- c("offset", seq_len(iter-1))
     names(RelChange) <- c("offset", seq_len(iter-1))
     # Output
     list(U = U, S = S, V = V, rank = rank,
-        RecError = RecError, RelChange = RelChange)
+        RecError = RecError,
+        TrainRecError = TrainRecError,
+        TestRecError = TestRecError,
+        RelChange = RelChange)
 }
 
-.checkNMTF <- function(X, pseudocount, initU, initS, initV,
+.checkNMTF <- function(X, M, pseudocount, initU, initS, initV,
     fixU, fixS, fixV, L1_U, L1_S, L1_V, L2_U, L2_S, L2_V, orthU, orthV,
     rank, Beta, root, thr, num.iter, viz, figdir, verbose){
     stopifnot(is.matrix(X))
+    if(!is.null(M)){
+        if(!identical(dim(X), dim(M))){
+            stop("Please specify the dimensions of X and M are same")
+        }
+    }
+    .checkZeroNA(X, M, type="matrix")
     stopifnot(is.numeric(pseudocount))
     if(!is.null(initU)){
         if(!identical(nrow(X), nrow(initU))){
@@ -96,7 +115,7 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         if(rank[1] != nrow(initS)){
             stop("Please specify rank[1] and nrow(initS) are same")
         }
-        if(rank[2] != nrow(initS)){
+        if(rank[2] != ncol(initS)){
             stop("Please specify rank[2] and ncol(initS) are same")
         }
     }
@@ -140,9 +159,20 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     stopifnot(is.logical(verbose))
 }
 
-.initNMTF <- function(X, pseudocount, rank, initU, initS, initV,
+.initNMTF <- function(X, M, pseudocount, rank, initU, initS, initV,
     algorithm, Beta, thr, verbose){
+    # NA mask
+    M_NA <- X
+    M_NA[] <- 1
+    M_NA[which(is.na(X))] <- 0
+    if(is.null(M)){
+        M <- M_NA
+    }
+    pM <- M
+    # Pseudo count
+    X[which(is.na(X))] <- pseudocount
     X[which(X == 0)] <- pseudocount
+    pM[which(pM == 0)] <- pseudocount
     if(is.null(initU)){
         U <- matrix(runif(nrow(X)*rank[1]), nrow=nrow(X), ncol=rank[1])
     }else{
@@ -159,8 +189,12 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         S <- initS
     }
     RecError = c()
+    TrainRecError = c()
+    TestRecError = c()
     RelChange = c()
     RecError[1] <- thr * 10
+    TrainRecError[1] <- thr * 10
+    TestRecError[1] <- thr * 10
     RelChange[1] <- thr * 10
     # Algorithm
     if (algorithm == "Frobenius") {
@@ -178,21 +212,22 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    list(X=X, U=U, S=S, V=V,
-        RecError=RecError, RelChange=RelChange,
+    list(X=X, M=M, pM=pM, M_NA=M_NA, U=U, S=S, V=V, RecError=RecError,
+        TrainRecError=TrainRecError, TestRecError=TestRecError,
+        RelChange=RelChange,
         Beta=Beta, algorithm=algorithm)
 }
 
-.updateU <- function(X, U, S, V, L1_U, L2_U, orthU, Beta, root, algorithm){
+.updateU <- function(X, pM, U, S, V, L1_U, L2_U, orthU, Beta, root, algorithm){
     if(algorithm == "Beta"){
         if(orthU){
             VS <- V %*% t(S)
             UU <- U %*% t(U)
-            numer <- X %*% VS
-            denom <- UU %*% X %*% VS
+            numer <- (pM * X) %*% VS
+            denom <- UU %*% (pM * X) %*% VS
         }else{
             VS <- V %*% t(S)
-            numer <- ((U %*% t(VS))^(Beta-2) * X) %*% VS
+            numer <- ((U %*% t(VS))^(Beta-2) * (pM * X)) %*% VS
             denom <- (U %*% t(VS))^(Beta-1) %*% VS
             denom <- denom + L1_U + L2_U * U
         }
@@ -203,11 +238,11 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         U <- .positive((X %*% VS) %*% ginv(crossprod(VS)))
     }
     if(algorithm == "PG"){
-        USV <- U %*% S %*% t(V)
+        USV <- pM * (U %*% S %*% t(V))
         VS <- V %*% t(S)
         VV <- t(V) %*% V
         Pu <- U - U / ((USV %*% VS) * (X %*% VS))
-        numer <- sum(Pu * (USV %*% VS - X %*% VS))
+        numer <- sum(Pu * (USV %*% VS - (pM * X) %*% VS))
         denom <- .trace((S %*% VV) %*% (t(S) %*% t(Pu) %*% Pu))
         etaU <-  numer / denom
         U <- .positive(U - etaU * Pu)
@@ -216,7 +251,7 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         for(i in seq_len(ncol(U))){
             VS <- V %*% t(S)
             USV <- U %*% S %*% t(V)
-            numer <- (X %*% VS)[,i] - (USV %*% VS)[,i]
+            numer <- ((pM * X) %*% VS)[,i] - (USV %*% VS)[,i]
             denom <- as.numeric(crossprod(V %*% S[i, ]))
             U[,i] <- U[,i] + .positive(numer / denom)
         }
@@ -224,15 +259,15 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     U
 }
 
-.updateV <- function(X, U, S, V, L1_V, L2_V, orthV, Beta, root, algorithm){
+.updateV <- function(X, pM, U, S, V, L1_V, L2_V, orthV, Beta, root, algorithm){
     if(algorithm == "Beta"){
         SU <- t(S) %*% t(U)
         VV <- V %*% t(V)
         if(orthV){
-            numer <- SU %*% X
-            denom <- SU %*% X %*% VV
+            numer <- SU %*% (pM * X)
+            denom <- SU %*% (pM * X) %*% VV
         }else{
-            numer <- SU %*% ((t(SU) %*% t(V))^(Beta - 2) * X)
+            numer <- SU %*% ((t(SU) %*% t(V))^(Beta - 2) * (pM * X))
             denom <- SU %*% (t(SU) %*% t(V))^(Beta - 1)
             denom <- denom + L1_V + L2_V * t(V)
         }
@@ -243,7 +278,7 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         V <- .positive((t(X) %*% US) %*% ginv(crossprod(US)))
     }
     if(algorithm == "PG"){
-        VSU <- V %*% t(S) %*% t(U)
+        VSU <- (V %*% t(S) %*% t(U)) * t(pM)
         US <- U %*% S
         SUU <- t(S) %*% t(U) %*% U
         Pv <- V - V / ((VSU %*% US) * (t(X) %*% US))
@@ -264,23 +299,23 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
     V
 }
 
-.updateS <- function(X, U, S, V, L1_S, L2_S, Beta, root, algorithm){
+.updateS <- function(X, pM, U, S, V, L1_S, L2_S, Beta, root, algorithm){
     if(algorithm == "Beta"){
         US <- U %*% S
-        numer <- t(U) %*% ((US %*% t(V))^(Beta-2) * X) %*% V
+        numer <- t(U) %*% ((US %*% t(V))^(Beta-2) * (pM * X)) %*% V
         denom <- t(U) %*% (US %*% t(V))^(Beta-1) %*% V
         denom <- denom + L1_S + L2_S * S
         S <- S * (numer / denom)^.rho(Beta, root)
     }
     if(algorithm == "ALS"){
         UU <- t(U) %*% U
-        UXV <- t(U) %*% X %*% V
+        UXV <- t(U) %*% (pM * X) %*% V
         VV <- t(V) %*% V
         S <- .positive(ginv(UU) %*% UXV %*% ginv(VV))
     }
     if(algorithm == "PG"){
-        USV <- U %*% S %*% t(V)
-        UXV <- t(U) %*% X %*% V
+        USV <- pM * (U %*% S %*% t(V))
+        UXV <- t(U) %*% (pM * X) %*% V
         UU <- t(U) %*% U
         VV <- t(V) %*% V
         Ps <- S - S / ((t(U) %*% USV %*% V) * UXV)
@@ -290,7 +325,7 @@ NMTF <- function(X, pseudocount=.Machine$double.eps,
         S <- .positive(S - etaS * Ps)
     }
     if(algorithm == "COD"){
-        UXV <- t(U) %*% X %*% V
+        UXV <- t(U) %*% (pM * X) %*% V
         UUSVV <- t(U) %*% U %*% S %*% t(V) %*% V
         for(i in seq_len(ncol(U))){
             for(j in seq_len(ncol(V))){

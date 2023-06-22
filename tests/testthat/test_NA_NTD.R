@@ -2,6 +2,7 @@
 # 3-order tensor
 #
 X <- toyModel("Tucker")
+X@data[sample(seq(length(X@data)), 0.1*length(X@data))] <- NA
 
 out1_1 <- NTD(X, rank=c(1,2,3), algorithm="Frobenius", num.iter=2)
 out1_2 <- NTD(X, rank=c(1,2,3), algorithm="Frobenius", init="ALS", num.iter=2)

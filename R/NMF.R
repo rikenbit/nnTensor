@@ -10,24 +10,21 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     # Argument check
     rank.method <- match.arg(rank.method)
     algorithm <- match.arg(algorithm)
-    chk <- .checkNMF(X, M, pseudocount, initU, initV, fixU, fixV,
+    .checkNMF(X, M, pseudocount, initU, initV, fixU, fixV,
         L1_U, L1_V, L2_U, L2_V, J, runtime,
         Alpha, Beta, eta, thr1, thr2, tol, num.iter, viz, figdir, verbose)
-    X <- chk$X
-    M <- chk$M
-    pM <- chk$pM
     if(length(J) != 1){
         cat("Each rank, multiple NMF runs are performed\n")
         out1 <- .lapply_pb(J, function(j){
             # Original data
             out.original <- lapply(seq_len(runtime), function(r){
-                try(.eachNMF(X, M, pM, initU, initV, fixU, fixV, L1_U, L1_V,
+                try(.eachNMF(X, M, pseudocount, initU, initV, fixU, fixV, L1_U, L1_V,
                     L2_U, L2_V, j, algorithm, Alpha, Beta, eta, thr1, thr2,
                     tol, num.iter, viz, figdir, verbose))
             })
             # Rand data
             out.random <- lapply(seq_len(runtime), function(r){
-                try(.eachNMF(.randomize(X), M, pM, initU, initV, fixU, fixV,
+                try(.eachNMF(.randomize(X), M, pseudocount, initU, initV, fixU, fixV,
                     L1_U, L1_V, L2_U, L2_V,
                     j, algorithm, Alpha, Beta, eta, thr1, thr2,
                     tol, num.iter, viz, figdir, verbose))
@@ -59,7 +56,7 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         class(out) <- "NMF"
         out
     }else{
-        out1 <- .eachNMF(X, M, pM, initU, initV, fixU, fixV,
+        out1 <- .eachNMF(X, M, pseudocount, initU, initV, fixU, fixV,
             L1_U, L1_V, L2_U, L2_V,
             J, algorithm, Alpha, Beta, eta, thr1, thr2, tol, num.iter,
             viz, figdir, verbose)
@@ -82,9 +79,7 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         if(!identical(dim(X), dim(M))){
             stop("Please specify the dimensions of X and M are same")
         }
-    }else{
-        M <- X
-        M[,] <- 1
+        .checkZeroNA(X, M, type="matrix")
     }
     stopifnot(is.numeric(pseudocount))
     if(!is.null(initU)){
@@ -125,20 +120,17 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         stop("Please specify the figdir as a string or NULL")
     }
     stopifnot(is.logical(verbose))
-    pM <- M
-    X[which(X == 0)] <- pseudocount
-    pM[which(pM == 0)] <- pseudocount
-    list(X=X, M=M, pM=pM)
 }
 
-.eachNMF <- function(X, M, pM, initU, initV, fixU, fixV, L1_U, L1_V, L2_U, L2_V,
+.eachNMF <- function(X, M, pseudocount, initU, initV, fixU, fixV, L1_U, L1_V, L2_U, L2_V,
     J, algorithm, Alpha, Beta, eta, thr1, thr2,
     tol, num.iter, viz, figdir, verbose) {
     # Initialization of U, V
-    int <- .initNMF(X, M, pM, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose)
+    int <- .initNMF(X, M, pseudocount, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose)
     X <- int$X
     M <- int$M
     pM <- int$pM
+    M_NA <- int$M_NA
     U <- int$U
     V <- int$V
     RecError <- int$RecError
@@ -161,8 +153,8 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         iter <- iter + 1
         X_bar <- .recMatrix(U, V)
         RecError[iter] <- .recError(X, X_bar)
-        TrainRecError[iter] <- .recError(M*X, M*X_bar)
-        TestRecError[iter] <- .recError((1-M)*X, (1-M)*X_bar)
+        TrainRecError[iter] <- .recError((1-M_NA+M)*X, (1-M_NA+M)*X_bar)
+        TestRecError[iter] <- .recError((M_NA-M)*X, (M_NA-M)*X_bar)
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
         if (viz && !is.null(figdir)) {
             png(filename = paste0(figdir, "/", iter-1, ".png"))
@@ -202,7 +194,19 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         RelChange = RelChange)
 }
 
-.initNMF <- function(X, M, pM, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose){
+.initNMF <- function(X, M, pseudocount, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose){
+    # NA mask
+    M_NA <- X
+    M_NA[] <- 1
+    M_NA[which(is.na(X))] <- 0
+    if(is.null(M)){
+        M <- M_NA
+    }
+    pM <- M
+    # Pseudo count
+    X[which(is.na(X))] <- pseudocount
+    X[which(X == 0)] <- pseudocount
+    pM[which(pM == 0)] <- pseudocount
     if(is.null(initU)){
         U <- matrix(runif(nrow(X) * J), nrow = nrow(X), ncol = J)
         U <- U * U
@@ -254,7 +258,7 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    list(X=X, M=M, pM=pM, U=U, V=V, RecError=RecError,
+    list(X=X, M=M, pM=pM, M_NA=M_NA, U=U, V=V, RecError=RecError,
         TrainRecError=TrainRecError,
         TestRecError=TestRecError, RelChange=RelChange,
         Alpha=Alpha, Beta=Beta, algorithm=algorithm)

@@ -10,7 +10,7 @@ The input data is assumed to be non-negative matrix.
 NMTF decompose the matrix to three low-dimensional factor matices.
 }
 \usage{
-NMTF(X, pseudocount=.Machine$double.eps,
+NMTF(X, M=NULL, pseudocount=.Machine$double.eps,
     initU=NULL, initS=NULL, initV=NULL,
     fixU=FALSE, fixS=FALSE, fixV=FALSE,
     L1_U=1e-10, L1_S=1e-10, L1_V=1e-10,
@@ -25,6 +25,10 @@ NMTF(X, pseudocount=.Machine$double.eps,
 \arguments{
 \item{X}{
 The input matrix which has N-rows and M-columns.
+}
+\item{M}{
+The mask matrix which has N-rows and M-columns. If the input matrix has
+missing values, specify the elements as 0 (otherwise 1).
 }
 \item{pseudocount}{
 The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).
@@ -107,8 +111,13 @@ If verbose == TRUE, Error change rate is generated in console window.
   U : A matrix which has N-rows and J1-columns (J1 < N).
   S : A matrix which has J1-rows and J2-columns.
   V : A matrix which has M-rows and J2-columns (J2 < M).
+  rank : The number of low-dimension (J1 (< N) and J2 (< M)).
   RecError : The reconstruction error between data tensor and reconstructed
   tensor from U and V.
+  TrainRecError : The reconstruction error calculated by training set
+  (observed values specified by M).
+  TestRecError : The reconstruction error calculated by test set
+  (missing values specified by M).
   RelChange : The relative change of the error.
   algorithm: algorithm specified.
 }

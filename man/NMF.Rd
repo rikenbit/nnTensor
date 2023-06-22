@@ -32,7 +32,7 @@ The input matrix which has N-rows and M-columns.
 }
 \item{M}{
 The mask matrix which has N-rows and M-columns. If the input matrix has
-missing values, specify the element as 0 (otherwise 1).
+missing values, specify the elements as 0 (otherwise 1).
 }
   \item{pseudocount}{
 The pseudo count to avoid zero division, when the element is zero (Default: Machine Epsilon).

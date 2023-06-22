@@ -2,10 +2,8 @@
 # 3-order tensor
 #
 X <- toyModel("CP")
-M1 <- X
-M2 <- X
-M1@data[] <- rbinom(length(X@data), 1, 0.5)
-M2@data[] <- rbinom(length(X@data), 1, 0.5)
+M1 <- kFoldMaskTensor(X, seeds=12345)[[1]]
+M2 <- kFoldMaskTensor(X, seeds=54321)[[1]]
 
 out1_1 <- NTF(X, M=M1, rank=3, algorithm="Frobenius", num.iter=2)
 out1_2 <- NTF(X, M=M1, rank=3, algorithm="Frobenius", init="ALS", num.iter=2)

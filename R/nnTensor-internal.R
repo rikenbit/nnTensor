@@ -1,3 +1,36 @@
+# Check whether M avoids 0 or NA elements in data matrix/tensor X
+#
+.checkZeroNA <- function(X, M, type=c("matrix", "Tensor")){
+    if("matrix" %in% is(M)){
+        .checkZeroNA_mat(X, M)
+    }
+    if("Tensor" %in% is(M)){
+        .checkZeroNA_tns(X, M)
+    }
+}
+
+.checkZeroNA_mat <- function(X, M){
+    # NA => 0
+    stopifnot(length(
+        setdiff(which(is.na(X)),
+        which(M == 0))) == 0)
+    # 0 => 1
+    stopifnot(length(
+        setdiff(which(X == 0),
+        which(M == 1))) == 0)
+}
+
+.checkZeroNA_tns <- function(X, M){
+    # NA => 0
+    stopifnot(length(
+        setdiff(which(is.na(X@data)),
+        which(M@data == 0))) == 0)
+    # 0 => 1
+    stopifnot(length(
+        setdiff(which(X@data == 0),
+        which(M@data == 1))) == 0)
+}
+
 .lapply_pb <- function(X, FUN, ...)
 {
  env <- environment()
@@ -349,9 +382,9 @@
         v <- vec(X_bar - X)
     }
     if(notsqrt){
-        sum(v * v)
+        sum(v * v, na.rm=TRUE)
     }else{
-        sqrt(sum(v * v))
+        sqrt(sum(v * v, na.rm=TRUE))
     }
 }
 

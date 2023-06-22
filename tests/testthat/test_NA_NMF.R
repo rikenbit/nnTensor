@@ -1,4 +1,5 @@
 X <- toyModel("NMF")
+X[sample(seq(length(X)), 0.1*length(X))] <- NA
 
 out1 <- NMF(X, J=3, algorithm="Frobenius", num.iter=2)
 out2 <- NMF(X, J=3, algorithm="KL", num.iter=2)

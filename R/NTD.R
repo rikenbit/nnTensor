@@ -11,17 +11,18 @@ NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     # Argument check
     algorithm <- match.arg(algorithm)
     init <- match.arg(init)
-    chk <- .checkNTD(X, M, pseudocount, rank, modes, initS, initA, fixS, fixA,
+    .checkNTD(X, M, pseudocount, rank, modes, initS, initA, fixS, fixA,
         Alpha, Beta, thr, num.iter, viz, figdir, verbose)
-    X <- chk$X
-    M <- chk$M
-    pM <- chk$pM
-    fixA <- chk$fixA
-    modes <- chk$modes
-    N <- chk$N
     # Initialization of An and S
-    int <- .initNTD(X, N, rank, modes, init, initS, initA,
+    int <- .initNTD(X, M, pseudocount, fixA, rank, modes, init, initS, initA,
         Alpha, Beta, algorithm, thr, verbose)
+    X <- int$X
+    M <- int$M
+    pM <- int$pM
+    M_NA <- int$M_NA
+    fixA <- int$fixA
+    modes <- int$modes
+    N <- int$N
     A <- int$A
     S <- int$S
     rank <- int$rank
@@ -145,8 +146,8 @@ NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         iter <- iter + 1
         X_bar <- recTensor(S=S, A=A, idx=modes)
         RecError[iter] <- .recError(X, X_bar)
-        TrainRecError[iter] <- .recError(M*X, M*X_bar)
-        TestRecError[iter] <- .recError((1-M)*X, (1-M)*X_bar)
+        TrainRecError[iter] <- .recError((1-M_NA+M)*X, (1-M_NA+M)*X_bar)
+        TestRecError[iter] <- .recError((M_NA-M)*X, (M_NA-M)*X_bar)
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
 
         if (viz && !is.null(figdir) && N == 3) {
@@ -195,9 +196,7 @@ NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         if(!identical(dim(X), dim(M))){
             stop("Please specify the dimensions of X and M are same")
         }
-    }else{
-        M <- X
-        M@data[] <- 1
+        .checkZeroNA(X, M, type="Tensor")
     }
     stopifnot(is.numeric(pseudocount))
     if(!is.null(initS)){
@@ -230,9 +229,6 @@ NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
             }
         }
     }
-    tmp <- rep(FALSE, length=length(dim(X)))
-    tmp[modes] <- fixA
-    fixA <- tmp
     stopifnot(is.numeric(rank))
     stopifnot(is.numeric(modes))
     stopifnot(is.numeric(Alpha))
@@ -247,19 +243,33 @@ NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (verbose) {
         cat("Initialization step is running...\n")
     }
+}
+
+.initNTD <- function(X, M, pseudocount, fixA, rank, modes, init, initS, initA,
+    Alpha, Beta, algorithm, thr, verbose){
+    N <- length(dim(X))
+    tmp <- rep(FALSE, length=length(dim(X)))
+    tmp[modes] <- fixA
+    fixA <- tmp
+    # modes
     modes <- unique(modes)
     modes <- modes[order(modes)]
     if(length(modes) != length(rank)){
         stop("Please the length(modes) and length(rank) as same")
     }
+    # NA mask
+    M_NA <- X
+    M_NA@data[] <- 1
+    M_NA@data[which(is.na(X@data))] <- 0
+    if(is.null(M)){
+        M <- M_NA
+    }
+    pM <- M
+    # Pseudo count
+    X@data[which(is.na(X@data))] <- pseudocount
     X <- .pseudocount(X, pseudocount)
     pM <- .pseudocount(M, pseudocount)
-    N <- length(dim(X))
-    list(X=X,M=M, pM=pM, fixA=fixA, modes=modes, N=N)
-}
 
-.initNTD <- function(X, N, rank, modes, init, initS, initA,
-    Alpha, Beta, algorithm, thr, verbose){
     A <- list()
     length(A) <- N
     Iposition <- setdiff(seq_len(N), modes)
@@ -345,7 +355,10 @@ NTD <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    list(A=A, S=S, rank=rank, RecError=RecError, TrainRecError=TrainRecError,
-        TestRecError=TestRecError, RelChange=RelChange, Alpha=Alpha, Beta=Beta,
+    list(X=X, M=M, pM=pM, M_NA=M_NA, fixA=fixA, modes=modes, N=N,
+        A=A, S=S, rank=rank,
+        RecError=RecError, TrainRecError=TrainRecError,
+        TestRecError=TestRecError, RelChange=RelChange,
+        Alpha=Alpha, Beta=Beta,
         algorithm=algorithm, E=E, J_hat=J_hat)
 }

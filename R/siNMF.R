@@ -8,16 +8,17 @@ siNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     viz = FALSE, figdir = NULL, verbose = FALSE) {
     # Argument check
     algorithm <- match.arg(algorithm)
-    chk <- .checksiNMF(X, M, pseudocount, initW, initH, fixW, fixH, J, w,
+    .checksiNMF(X, M, pseudocount, initW, initH, fixW, fixH, J, w,
         p, thr, num.iter, viz, figdir, verbose)
-    X <- chk$X
-    M <- chk$M
-    pM <- chk$pM
-    fixH <- chk$fixH
-    w <- chk$w
-    K <- chk$K
     # Initialization of W, H
-    int <- .initsiNMF(X, initW, initH, J, p, thr, algorithm, verbose)
+    int <- .initsiNMF(X, M, pseudocount, fixH, w, initW, initH, J, p, thr, algorithm, verbose)
+    X <- int$X
+    M <- int$M
+    pM <- int$pM
+    M_NA <- int$M_NA
+    fixH <- int$fixH
+    w <- int$w
+    K <- int$K
     W <- int$W
     H <- int$H
     RecError <- int$RecError
@@ -61,10 +62,11 @@ siNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
             .recError(X[[x]], X_bar[[x]], notsqrt=TRUE)
         }))))
         TrainRecError[iter] <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
-            .recError(M[[x]]*X[[x]], M[[x]]*X_bar[[x]], notsqrt=TRUE)
+            .recError((1-M_NA[[x]]+M[[x]])*X[[x]],
+                (1-M_NA[[x]]+M[[x]])*X_bar[[x]], notsqrt=TRUE)
         }))))
         TestRecError[iter] <- sqrt(sum(unlist(lapply(seq_along(X), function(x){
-            .recError((1-M[[x]])*X[[x]], (1-M[[x]])*X_bar[[x]], notsqrt=TRUE)
+            .recError((M_NA[[x]]-M[[x]])*X[[x]], (M_NA[[x]]-M[[x]])*X_bar[[x]], notsqrt=TRUE)
         }))))
         RelChange[iter] <- abs(pre_Error - RecError[iter]) / RecError[iter]
         if (viz && !is.null(figdir)) {
@@ -114,11 +116,9 @@ siNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         if(!identical(dimX, dimM)){
             stop("Please specify the dimensions of X and M are same")
         }
-    }else{
-        M <- X
-        for(i in seq(length(X))){
-            M[[i]][] <- 1
-        }
+        lapply(seq(length(X)), function(i){
+            .checkZeroNA(X[[i]], M[[i]], type="matrix")
+        })
     }
     stopifnot(is.numeric(pseudocount))
     if(!is.null(initW)){
@@ -142,17 +142,11 @@ siNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
                 stop("Please specify the length of fixH same as the length of X")
             }
         }
-    }else{
-        fixH <- rep(fixH, length=length(X))
     }
     stopifnot(is.numeric(J))
-    if(is.null(w)){
-        w <- rep(1, length=length(X))
-    }else{
+    if(!is.null(w)){
         if(length(X) != length(w)){
             stop("The length of weight vector must be same as that of input list X!")
-        }else{
-            w <- w / sum(w)
         }
     }
     stopifnot(is.numeric(p))
@@ -163,16 +157,35 @@ siNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if(!is.character(figdir) && !is.null(figdir)){
         stop("Please specify the figdir as a string or NULL")
     }
-    pM <- M
-    lapply(seq_along(X), function(x){
-         X[[x]][which(X[[x]] == 0)] <<- pseudocount
-         pM[[x]][which(pM[[x]] == 0)] <<- pseudocount
-     })
-    K <- length(X)
-    list(X=X, M=M, pM=pM, w=w, fixH=fixH, K=K)
 }
 
-.initsiNMF <- function(X, initW, initH, J, p, thr, algorithm, verbose){
+.initsiNMF <- function(X, M, pseudocount, fixH, w, initW, initH, J, p, thr, algorithm, verbose){
+    K <- length(X)
+    if(is.logical(fixH)){
+        fixH <- rep(fixH, length=length(X))
+    }
+    if(is.null(w)){
+        w <- rep(1, length=length(X))
+    }
+    w <- w / sum(w)
+    # NA mask
+    M_NA <- list()
+    length(M_NA) <- length(X)
+    for(i in seq_along(X)){
+        M_NA[[i]] <- X[[i]]
+        M_NA[[i]][] <- 1
+        M_NA[[i]][which(is.na(X[[i]]))] <- 0
+    }
+    if(is.null(M)){
+        M <- M_NA
+    }
+    pM <- M
+    # Pseudo count
+    for(i in seq_along(X)){
+        X[[i]][which(is.na(X[[i]]))] <- pseudocount
+        X[[i]][which(X[[i]] == 0)] <- pseudocount
+        pM[[i]][which(pM[[i]] == 0)] <- pseudocount
+    }
     if(is.null(initW)){
         W <- matrix(runif(nrow(X[[1]])*J), nrow=nrow(X[[1]]), ncol=J)
         W <- .columnNorm(W * W)
@@ -212,7 +225,7 @@ siNMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if (verbose) {
         cat("Iterative step is running...\n")
     }
-    list(W=W, H=H, RecError=RecError, TrainRecError=TrainRecError,
+    list(X=X, M=M, pM=pM, M_NA=M_NA, fixH=fixH, w=w, K=K, W=W, H=H, RecError=RecError, TrainRecError=TrainRecError,
         TestRecError=TestRecError, RelChange=RelChange, p=p)
 }
 

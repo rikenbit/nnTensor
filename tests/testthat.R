@@ -25,13 +25,23 @@ test_file("testthat/test_kFoldMaskTensor.R")
 
 # # Mask matrix/tensor for imputation
 # test_file("testthat/test_mask_NMF.R")
+# test_file("testthat/test_mask_NMTF.R")
 # test_file("testthat/test_mask_siNMF.R")
 # test_file("testthat/test_mask_jNMF.R")
 # test_file("testthat/test_mask_NTF.R")
 # test_file("testthat/test_mask_NTD.R")
 
+# # NA avoidance
+# test_file("testthat/test_NA_NMF.R")
+# test_file("testthat/test_NA_NMTF.R")
+# test_file("testthat/test_NA_siNMF.R")
+# test_file("testthat/test_NA_jNMF.R")
+# test_file("testthat/test_NA_NTF.R")
+# test_file("testthat/test_NA_NTD.R")
+
 # # Initialization
 # test_file("testthat/test_init_NMF.R")
+# test_file("testthat/test_init_NMTF.R")
 # test_file("testthat/test_init_siNMF.R")
 # test_file("testthat/test_init_jNMF.R")
 # test_file("testthat/test_init_NTF.R")
@@ -39,6 +49,7 @@ test_file("testthat/test_kFoldMaskTensor.R")
 
 # # Fix options for transfer learning
 # test_file("testthat/test_fix_NMF.R")
+# test_file("testthat/test_fix_NMTF.R")
 # test_file("testthat/test_fix_siNMF.R")
 # test_file("testthat/test_fix_jNMF.R")
 # test_file("testthat/test_fix_NTF.R")
