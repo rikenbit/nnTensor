@@ -68,7 +68,7 @@ Paramter for L2 regularitation (Default: 1e-10).
 Paramter for L2 regularitation (Default: 1e-10).
 }
 \item{J}{
-The number of low-dimension (J < {N, M}). If a numerical vector is specified
+The number of low-dimension (J < \{N, M\}). If a numerical vector is specified
 (e.g. 2:6), the appropriate rank is estimated.
 }
 \item{rank.method}{
@@ -116,9 +116,9 @@ If verbose == TRUE, Error change rate is generated in console window.
 }
 
 \value{
-  U : A matrix which has N-rows and J-columns (J < {N, M}).
-  V : A matrix which has M-rows and J-columns (J < {N, M}).
-  J : The number of dimension (J < {N, M}).
+  U : A matrix which has N-rows and J-columns (J < \{N, M\}).
+  V : A matrix which has M-rows and J-columns (J < \{N, M\}).
+  J : The number of dimension (J < \{N, M\}).
   RecError : The reconstruction error between data tensor and reconstructed
   tensor from U and V.
   TrainRecError : The reconstruction error calculated by training set
