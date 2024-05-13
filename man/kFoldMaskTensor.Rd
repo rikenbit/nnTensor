@@ -9,7 +9,7 @@ Mask tensors generator to perform k-fold cross validation
 The output multiple mask tensors can be immediately specified as the argument M for NTF() or NTD().
 }
 \usage{
-kFoldMaskTensor(X, k=3, seeds=123)
+kFoldMaskTensor(X, k=3, seeds=123, sym=FALSE)
 }
 
 \arguments{
@@ -21,6 +21,9 @@ Number of split for k-fold cross validation (Default: 3).
   }
   \item{seeds}{
 Random seed to use for set.seed() (Default: 123).
+  }
+  \item{sym}{
+Data will be dropped symmetrically (available only when matrix is specified, Default: FALSE).
   }
 }
 \author{Koki Tsuyuzaki}

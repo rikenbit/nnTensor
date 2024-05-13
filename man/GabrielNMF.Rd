@@ -20,7 +20,7 @@ GabrielNMF(X, J = 3, nx = 5, ny = 5, ...)
 The input matrix which has N-rows and M-columns.
 }
 \item{J}{
-The number of low-dimension (J < {N, M}).
+The number of low-dimension (J < \{N, M\}).
 }
 \item{nx}{
 The number of hold-out in row-wise direction (2 < nx < N).
