@@ -7,7 +7,8 @@ import(ggplot2)
 importFrom(grDevices, dev.off, png)
 importFrom(methods, is)
 importFrom(MASS, ginv)
-importFrom(stats, runif, sd, rpois, median)
+importFrom(Vicus, graphMatrix)
+importFrom(stats, runif, sd, rpois, median, dnorm, dpois)
 importFrom(graphics, layout, plot.new)
 importFrom("stats", "as.dist", "cophenetic", "cor", "hclust")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
@@ -26,5 +27,7 @@ export(
     NTD,
     NTF,
     GabrielNMF,
-    kFoldMaskTensor
+    kFoldMaskTensor,
+    ZITNMF,
+    PSDTF
 	)

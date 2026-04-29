@@ -21,9 +21,16 @@ NMF(X, M=NULL, pseudocount=.Machine$double.eps, initU=NULL, initV=NULL,
     "singular",  "volume", "condition"), runtime=30,
   algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
     "Alpha", "Beta", "ALS", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP",
-    "Orthogonal", "OrthReg"), Alpha = 1, Beta = 2,
+    "Orthogonal", "OrthReg", "t", "TV-GNMF"),
+  Alpha = 1, Beta = 2, nu = 2,
   eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04,
-  num.iter = 100, viz = FALSE, figdir = NULL, verbose = FALSE)
+  num.iter = 100,
+  L_graph_U = NULL, L_graph_V = NULL,
+  lambda_graph_U = 0, lambda_graph_V = 0,
+  graph.method = c("Vicus", "LEM", "HLLE"),
+  graph.K = 10, graph.alpha = 0.9,
+  lambda_TV = 0, beta_TV = 0,
+  viz = FALSE, figdir = NULL, verbose = FALSE)
 }
 
 \arguments{
@@ -79,13 +86,20 @@ specified as a numerical vector longer than two, this option will be active.
 The number of trials to estimate rank (Default: 10).
 }
 \item{algorithm}{
-NMF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman", "Alpha", "Beta", "ALS", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP", "Orthogonal", and "OrthReg" are available (Default: "Frobenius").
+NMF algorithms. "Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
+"Alpha", "Beta", "ALS", "PGD", "HALS", "GCD", "Projected", "NHR", "DTPP",
+"Orthogonal", "OrthReg", "t", and "TV-GNMF" are available
+(Default: "Frobenius").
 }
 \item{Alpha}{
 The parameter of Alpha-divergence.
 }
 \item{Beta}{
 The parameter of Beta-divergence.
+}
+\item{nu}{
+The degrees of freedom parameter for t-NMF algorithm (Default: 2).
+Larger values approach Gaussian NMF. Only used when algorithm = "t".
 }
 \item{eta}{
 The stepsize for PGD algorithm (Default: 0.0001).
@@ -103,6 +117,44 @@ The tolerance parameter used in GCD algorithm.
 }
 \item{num.iter}{
 The number of interation step (Default: 100).
+}
+\item{L_graph_U}{
+A pre-computed graph Laplacian matrix for rows (N x N).
+If NULL and lambda_graph_U > 0, it is computed automatically using
+Vicus::graphMatrix (Default: NULL).
+}
+\item{L_graph_V}{
+A pre-computed graph Laplacian matrix for columns (M x M).
+If NULL and lambda_graph_V > 0, it is computed automatically using
+Vicus::graphMatrix (Default: NULL).
+}
+\item{lambda_graph_U}{
+The weight for graph regularization on U (Default: 0).
+When set to a positive value, adds graph Laplacian regularization to the
+denominator of the multiplicative update rule for U.
+}
+\item{lambda_graph_V}{
+The weight for graph regularization on V (Default: 0).
+When set to a positive value, adds graph Laplacian regularization to the
+denominator of the multiplicative update rule for V.
+}
+\item{graph.method}{
+The method for computing the graph matrix via Vicus::graphMatrix.
+"Vicus", "LEM", and "HLLE" are available (Default: "Vicus").
+}
+\item{graph.K}{
+The number of nearest neighbors for graph construction (Default: 10).
+}
+\item{graph.alpha}{
+The alpha parameter for Vicus::graphMatrix (Default: 0.9).
+}
+\item{lambda_TV}{
+The weight for Total Variation regularization on V.
+Only used when algorithm = "TV-GNMF" (Default: 0).
+}
+\item{beta_TV}{
+The weight for graph regularization in TV-GNMF algorithm.
+Only used when algorithm = "TV-GNMF" (Default: 0).
 }
 \item{viz}{
 If viz == TRUE, internal reconstructed matrix can be visualized.
@@ -138,6 +190,18 @@ Andrzej CICHOCK, et. al., (2009). Nonnegative Matrix and Tensor Factorizations.
 Keigo Kimura, (2017). A Study on Efficient Algorithms for Nonnegative Matrix/
 Tensor Factorization.
 \emph{Hokkaido University Collection of Scholarly and Academic Papers}
+
+K. Yoshii, K. Itoyama, and M. Goto (2016). Student's t Nonnegative Matrix
+Factorization and Positive Semidefinite Tensor Factorization for
+Single-Channel Audio Source Separation. \emph{ICASSP}, pp.51-55.
+
+C. Leng, Z. Chen, G. Cai, I. Cheng, Z. Xiong, J. Tian, and A. Basu (2016).
+Total Variation Constrained Graph Regularized NMF for Medical Image
+Registration. \emph{IEEE ICIP}.
+
+D. Cai, X. He, J. Han, and T. S. Huang (2011). Graph Regularized Nonnegative
+Matrix Factorization for Data Representation.
+\emph{IEEE Transactions on PAMI}, 33(8), pp.1548-1560.
 }
 \author{Koki Tsuyuzaki}
 
@@ -156,6 +220,18 @@ Tensor Factorization.
     # Rank estimation mode (all method)
     out3 <- NMF(matdata, J=2:10, rank.method="all", runtime=10)
     plot(out3)
+
+    # t-NMF (robust to outliers)
+    out4 <- NMF(matdata, J=5, algorithm="t", nu=2)
+
+    # Graph-regularized NMF
+    out5 <- NMF(matdata, J=5, algorithm="Frobenius",
+      lambda_graph_V=0.1, graph.K=5)
+
+    # TV-GNMF (Total Variation + Graph regularization)
+    out6 <- NMF(matdata, J=5, algorithm="TV-GNMF",
+      lambda_TV=0.1, beta_TV=0.1,
+      lambda_graph_V=0.1, graph.K=5)
   }
 }
 \keyword{methods}

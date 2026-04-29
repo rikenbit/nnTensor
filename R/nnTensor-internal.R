@@ -568,6 +568,222 @@
     paste(tmp, collapse=" * ")
 }
 
+######################################
+# PSDTF helpers
+######################################
+
+.checkPSDTF <- function(X, rank, initH, initV, thr, num.iter, verbose) {
+    if (is.array(X)) {
+        stopifnot(length(dim(X)) == 3)
+        stopifnot(dim(X)[1] == dim(X)[2])
+    } else {
+        stop("X must be a 3-dimensional array (M x M x N)")
+    }
+    stopifnot(is.numeric(rank))
+    stopifnot(length(rank) == 1)
+    stopifnot(rank >= 1)
+    if (!is.null(initH)) {
+        stopifnot(is.matrix(initH))
+        stopifnot(nrow(initH) == rank)
+        stopifnot(ncol(initH) == dim(X)[3])
+    }
+    if (!is.null(initV)) {
+        stopifnot(is.list(initV))
+        stopifnot(length(initV) == rank)
+    }
+    stopifnot(is.numeric(thr))
+    stopifnot(thr > 0)
+    stopifnot(is.numeric(num.iter))
+    stopifnot(num.iter >= 1)
+    stopifnot(is.logical(verbose))
+}
+
+.initPSDTF <- function(X, rank, initH, initV) {
+    M <- dim(X)[1]
+    N <- dim(X)[3]
+    K <- rank
+    # Extract slices
+    X_slices <- vector("list", N)
+    for (n in seq_len(N)) {
+        X_slices[[n]] <- X[, , n]
+    }
+    # Initialize H
+    if (is.null(initH)) {
+        H <- matrix(runif(K * N), nrow = K, ncol = N)
+    } else {
+        H <- initH
+    }
+    # Initialize V as random PSD matrices with unit trace
+    if (is.null(initV)) {
+        V <- vector("list", K)
+        for (k in seq_len(K)) {
+            A <- matrix(runif(M * M), nrow = M, ncol = M)
+            Vk <- A %*% t(A)
+            V[[k]] <- Vk / sum(diag(Vk))
+        }
+    } else {
+        V <- initV
+    }
+    list(M = M, N = N, H = H, V = V, X_slices = X_slices)
+}
+
+.logDetDivergence <- function(X_n, Y_n) {
+    M <- nrow(X_n)
+    XYinv <- X_n %*% solve(Y_n)
+    -log(det(XYinv)) + sum(diag(XYinv)) - M
+}
+
+.matrix_inv_sqrt <- function(A) {
+    e <- eigen(A, symmetric = TRUE)
+    vals <- e$values
+    vals[vals < .Machine$double.eps] <- .Machine$double.eps
+    e$vectors %*% diag(1 / sqrt(vals)) %*% t(e$vectors)
+}
+
+######################################
+# TV-NMF helper
+######################################
+
+.tv_divergence <- function(H, eps=1e-10){
+    # H is N x K matrix
+    # Compute TV divergence: div(nabla H / |nabla H|)
+    # Using forward differences for gradient, backward differences for divergence
+    nr <- nrow(H)
+    nc <- ncol(H)
+    # Gradient in row direction (d/dx)
+    dx <- rbind(H[-1, , drop=FALSE] - H[-nr, , drop=FALSE],
+        matrix(0, nrow=1, ncol=nc))
+    # Gradient in column direction (d/dy)
+    dy <- cbind(H[, -1, drop=FALSE] - H[, -nc, drop=FALSE],
+        matrix(0, nrow=nr, ncol=1))
+    # Norm of gradient
+    grad_norm <- sqrt(dx^2 + dy^2 + eps)
+    # Normalized gradient
+    nx <- dx / grad_norm
+    ny <- dy / grad_norm
+    # Divergence (backward differences)
+    div_x <- rbind(nx[1, , drop=FALSE],
+        nx[-1, , drop=FALSE] - nx[-nr, , drop=FALSE])
+    div_y <- cbind(ny[, 1, drop=FALSE],
+        ny[, -1, drop=FALSE] - ny[, -nc, drop=FALSE])
+    div_val <- div_x + div_y
+    # Split into positive and negative parts for MU update
+    list(positive = pmax(div_val, 0),
+         negative = pmax(-div_val, 0))
+}
+
+######################################
+# ZITNMF helpers
+######################################
+
+.dtweedie_beta_representation <- function(y, mu, phi, beta) {
+    if (beta > 2) {
+        stop("beta > 2 is not supported.")
+    } else if (beta == 2) {
+        dnorm(x = y, mean = mu, sd = sqrt(phi), log = FALSE)
+    } else if (beta == 1) {
+        dpois(x = y, lambda = mu, log = FALSE)
+    } else if (beta < 1) {
+        if (!requireNamespace("tweedie", quietly = TRUE)) {
+            stop("Package 'tweedie' is required for Beta < 1. ",
+                "Install with install.packages('tweedie').")
+        }
+        tweedie::dtweedie(y = y, mu = mu, phi = phi, power = 2 - beta)
+    } else {
+        stop("beta must be 2, 1 or less than 1.")
+    }
+}
+
+.betaDivergence <- function(x, y, beta) {
+    if (beta == 1) {
+        sum(x * log(x / y) - x + y)
+    } else if (beta == 0) {
+        sum(x / y - log(x / y) - 1)
+    } else {
+        sum(x * (x^(beta - 1) - y^(beta - 1)) / (beta - 1) -
+            (x^beta - y^beta) / beta)
+    }
+}
+
+.checkZITNMF <- function(X, Z, pseudocount, initF, initA, fixF, fixA,
+    J, Beta, phi, thr, num.iter, verbose) {
+    stopifnot(is.matrix(X))
+    if (!is.null(Z)) {
+        stopifnot(identical(dim(X), dim(Z)))
+    }
+    stopifnot(is.numeric(pseudocount))
+    stopifnot(pseudocount >= 0)
+    if (!is.null(initF)) {
+        stopifnot(is.matrix(initF))
+        stopifnot(dim(initF)[1] == nrow(X))
+        stopifnot(dim(initF)[2] == J)
+    }
+    if (!is.null(initA)) {
+        stopifnot(is.matrix(initA))
+        stopifnot(dim(initA)[1] == ncol(X))
+        stopifnot(dim(initA)[2] == J)
+    }
+    stopifnot(is.logical(fixF))
+    stopifnot(is.logical(fixA))
+    stopifnot(is.numeric(J))
+    stopifnot(length(J) == 1)
+    stopifnot(J <= min(dim(X)))
+    stopifnot(is.numeric(Beta))
+    stopifnot(is.numeric(phi))
+    if (!is.null(thr)) {
+        stopifnot(is.numeric(thr))
+        stopifnot(thr > 0)
+    }
+    stopifnot(is.numeric(num.iter))
+    stopifnot(num.iter >= 0)
+    stopifnot(is.logical(verbose))
+}
+
+.initZITNMF <- function(X, Z, pseudocount, initF, initA, initW,
+    J, Beta, initializer) {
+    X[which(X == 0)] <- pseudocount
+    E <- X
+    E[] <- 1
+    if (is.null(initF) || is.null(initA)) {
+        if (initializer == "NMF") {
+            res.NMF <- NMF(X, J = J, algorithm = "Beta", Beta = Beta)
+            if (is.null(initF)) {
+                initF <- res.NMF$U
+            }
+            if (is.null(initA)) {
+                initA <- res.NMF$V
+            }
+        }
+        if (initializer == "ALS") {
+            res.ALS <- svd(X)
+            if (is.null(initF)) {
+                initF <- .positive(res.ALS$u[, seq_len(J)])
+            }
+            if (is.null(initA)) {
+                initA <- .positive(res.ALS$v[, seq_len(J)])
+            }
+        }
+        if (initializer == "Random") {
+            if (is.null(initF)) {
+                initF <- matrix(runif(nrow(X) * J),
+                    nrow = nrow(X), ncol = J)
+            }
+            if (is.null(initA)) {
+                initA <- matrix(runif(J * ncol(X)),
+                    nrow = ncol(X), ncol = J)
+            }
+        }
+    }
+    if (is.null(initW)) {
+        w <- runif(1, min = 0, max = 1)
+    } else {
+        w <- initW
+    }
+    list(X = X, E = E, Fmat = initF, A = initA, w = w,
+        BetaDivergenceHistory = numeric(0),
+        BetaDivergenceChanges = numeric(0))
+}
+
 .rho <- function(Beta, root=FALSE){
     if(root){
         out <- 0.5

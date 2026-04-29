@@ -36,3 +36,14 @@ expect_equivalent(length(out14), 10)
 expect_equivalent(length(out15), 10)
 expect_equivalent(length(out16), 10)
 expect_equivalent(length(out17), 10)
+
+out18 <- NMF(X, J=3, algorithm="t", num.iter=2)
+out19 <- NMF(X, J=3, algorithm="TV-GNMF", num.iter=2)
+out20 <- NMF(X, J=3, algorithm="Frobenius", lambda_graph_V=0.1, graph.K=5, num.iter=2)
+out21 <- NMF(X, J=3, algorithm="TV-GNMF", lambda_TV=0.1, beta_TV=0.1,
+    lambda_graph_V=0.1, graph.K=5, num.iter=2)
+
+expect_equivalent(length(out18), 10)
+expect_equivalent(length(out19), 10)
+expect_equivalent(length(out20), 10)
+expect_equivalent(length(out21), 10)

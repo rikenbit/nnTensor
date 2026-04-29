@@ -4,30 +4,43 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     rank.method=c("all", "ccc", "dispersion", "rss", "evar", "residuals", "sparseness.basis", "sparseness.coef", "sparseness2.basis",  "sparseness2.coef",  "norm.info.gain.basis",  "norm.info.gain.coef",  "singular",  "volume",  "condition"), runtime=30,
     algorithm = c("Frobenius", "KL", "IS", "Pearson", "Hellinger", "Neyman",
         "Alpha", "Beta", "ALS", "PGD", "HALS", "GCD", "Projected", "NHR",
-        "DTPP", "Orthogonal", "OrthReg"), Alpha = 1, Beta = 2,
+        "DTPP", "Orthogonal", "OrthReg", "t", "TV-GNMF"),
+    Alpha = 1, Beta = 2, nu = 2,
     eta = 1e-04, thr1 = 1e-10, thr2 = 1e-10, tol = 1e-04, num.iter = 100,
+    L_graph_U = NULL, L_graph_V = NULL,
+    lambda_graph_U = 0, lambda_graph_V = 0,
+    graph.method = c("Vicus", "LEM", "HLLE"),
+    graph.K = 10, graph.alpha = 0.9,
+    lambda_TV = 0, beta_TV = 0,
     viz = FALSE, figdir = NULL, verbose = FALSE){
     # Argument check
     rank.method <- match.arg(rank.method)
     algorithm <- match.arg(algorithm)
+    graph.method <- match.arg(graph.method)
     .checkNMF(X, M, pseudocount, initU, initV, fixU, fixV,
         L1_U, L1_V, L2_U, L2_V, J, runtime,
-        Alpha, Beta, eta, thr1, thr2, tol, num.iter, viz, figdir, verbose)
+        Alpha, Beta, nu, eta, thr1, thr2, tol, num.iter,
+        L_graph_U, L_graph_V, lambda_graph_U, lambda_graph_V,
+        lambda_TV, beta_TV, viz, figdir, verbose)
     if(length(J) != 1){
         cat("Each rank, multiple NMF runs are performed\n")
         out1 <- .lapply_pb(J, function(j){
             # Original data
             out.original <- lapply(seq_len(runtime), function(r){
                 try(.eachNMF(X, M, pseudocount, initU, initV, fixU, fixV, L1_U, L1_V,
-                    L2_U, L2_V, j, algorithm, Alpha, Beta, eta, thr1, thr2,
-                    tol, num.iter, viz, figdir, verbose))
+                    L2_U, L2_V, j, algorithm, Alpha, Beta, nu, eta, thr1, thr2,
+                    tol, num.iter, L_graph_U, L_graph_V, lambda_graph_U,
+                    lambda_graph_V, graph.method, graph.K, graph.alpha,
+                    lambda_TV, beta_TV, viz, figdir, verbose))
             })
             # Rand data
             out.random <- lapply(seq_len(runtime), function(r){
                 try(.eachNMF(.randomize(X), M, pseudocount, initU, initV, fixU, fixV,
                     L1_U, L1_V, L2_U, L2_V,
-                    j, algorithm, Alpha, Beta, eta, thr1, thr2,
-                    tol, num.iter, viz, figdir, verbose))
+                    j, algorithm, Alpha, Beta, nu, eta, thr1, thr2,
+                    tol, num.iter, L_graph_U, L_graph_V, lambda_graph_U,
+                    lambda_graph_V, graph.method, graph.K, graph.alpha,
+                    lambda_TV, beta_TV, viz, figdir, verbose))
             })
             list(out.original=out.original, out.random=out.random)
         })
@@ -58,8 +71,10 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     }else{
         out1 <- .eachNMF(X, M, pseudocount, initU, initV, fixU, fixV,
             L1_U, L1_V, L2_U, L2_V,
-            J, algorithm, Alpha, Beta, eta, thr1, thr2, tol, num.iter,
-            viz, figdir, verbose)
+            J, algorithm, Alpha, Beta, nu, eta, thr1, thr2, tol, num.iter,
+            L_graph_U, L_graph_V, lambda_graph_U, lambda_graph_V,
+            graph.method, graph.K, graph.alpha,
+            lambda_TV, beta_TV, viz, figdir, verbose)
         list(U = out1$U,
             V = out1$V,
             J = J,
@@ -73,7 +88,9 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
 
 .checkNMF <- function(X, M, pseudocount, initU, initV, fixU, fixV,
     L1_U, L1_V, L2_U, L2_V, J, runtime,
-    Alpha, Beta, eta, thr1, thr2, tol, num.iter, viz, figdir, verbose){
+    Alpha, Beta, nu, eta, thr1, thr2, tol, num.iter,
+    L_graph_U, L_graph_V, lambda_graph_U, lambda_graph_V,
+    lambda_TV, beta_TV, viz, figdir, verbose){
     stopifnot(is.matrix(X))
     if(!is.null(M)){
         if(!identical(dim(X), dim(M))){
@@ -115,6 +132,26 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     stopifnot(is.numeric(thr2))
     stopifnot(is.numeric(tol))
     stopifnot(is.numeric(num.iter))
+    stopifnot(is.numeric(nu))
+    stopifnot(nu > 0)
+    stopifnot(is.numeric(lambda_graph_U))
+    stopifnot(lambda_graph_U >= 0)
+    stopifnot(is.numeric(lambda_graph_V))
+    stopifnot(lambda_graph_V >= 0)
+    if(!is.null(L_graph_U)){
+        stopifnot(is.matrix(L_graph_U))
+        stopifnot(nrow(L_graph_U) == nrow(X))
+        stopifnot(ncol(L_graph_U) == nrow(X))
+    }
+    if(!is.null(L_graph_V)){
+        stopifnot(is.matrix(L_graph_V))
+        stopifnot(nrow(L_graph_V) == ncol(X))
+        stopifnot(ncol(L_graph_V) == ncol(X))
+    }
+    stopifnot(is.numeric(lambda_TV))
+    stopifnot(lambda_TV >= 0)
+    stopifnot(is.numeric(beta_TV))
+    stopifnot(beta_TV >= 0)
     stopifnot(is.logical(viz))
     if(!is.character(figdir) && !is.null(figdir)){
         stop("Please specify the figdir as a string or NULL")
@@ -123,8 +160,10 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
 }
 
 .eachNMF <- function(X, M, pseudocount, initU, initV, fixU, fixV, L1_U, L1_V, L2_U, L2_V,
-    J, algorithm, Alpha, Beta, eta, thr1, thr2,
-    tol, num.iter, viz, figdir, verbose) {
+    J, algorithm, Alpha, Beta, nu, eta, thr1, thr2,
+    tol, num.iter, L_graph_U, L_graph_V, lambda_graph_U, lambda_graph_V,
+    graph.method, graph.K, graph.alpha,
+    lambda_TV, beta_TV, viz, figdir, verbose) {
     # Initialization of U, V
     int <- .initNMF(X, M, pseudocount, initU, initV, J, thr1, Alpha, Beta, algorithm, verbose)
     X <- int$X
@@ -140,15 +179,30 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     Alpha <- int$Alpha
     Beta <- int$Beta
     algorithm <- int$algorithm
+    # Graph Laplacian computation
+    LU <- L_graph_U
+    LV <- L_graph_V
+    if(lambda_graph_U > 0 && is.null(LU)){
+        gm <- Vicus::graphMatrix(X, algorithm = graph.method,
+            K = graph.K, alpha = graph.alpha)
+        LU <- as.matrix(gm$M)
+    }
+    if(lambda_graph_V > 0 && is.null(LV)){
+        gm <- Vicus::graphMatrix(t(X), algorithm = graph.method,
+            K = graph.K, alpha = graph.alpha)
+        LV <- as.matrix(gm$M)
+    }
     iter <- 1
     while ((RecError[iter] > thr1) && (iter <= num.iter)) {
         # Update U, V
         X_bar <- .recMatrix(U, V)
         pre_Error <- .recError(X, X_bar)
         U <- .updateU_NMF(X, pM, U, V, fixU, L1_U, L2_U, J, algorithm,
-            Alpha, Beta, eta, thr2, tol)
+            Alpha, Beta, nu, eta, thr2, tol,
+            LU, lambda_graph_U, lambda_TV, beta_TV)
         V <- .updateV_NMF(X, pM, U, V, fixV, L1_V, L2_V, J, algorithm,
-            Alpha, Beta, eta, thr2, tol)
+            Alpha, Beta, nu, eta, thr2, tol,
+            LV, lambda_graph_V, lambda_TV, beta_TV)
         # After Update U, V
         iter <- iter + 1
         X_bar <- .recMatrix(U, V)
@@ -264,7 +318,8 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         Alpha=Alpha, Beta=Beta, algorithm=algorithm)
 }
 
-.updateU_NMF <- function(X, pM, U, V, fixU, L1_U, L2_U, J, algorithm, Alpha, Beta, eta, thr2, tol){
+.updateU_NMF <- function(X, pM, U, V, fixU, L1_U, L2_U, J, algorithm, Alpha, Beta, nu, eta, thr2, tol,
+    LU, lambda_graph_U, lambda_TV, beta_TV){
     if(!fixU){
         if(algorithm == "ALS"){
             U <- .positive(X %*% ginv(t(V)))
@@ -282,6 +337,9 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         if(algorithm == "Beta"){
             numer <- ((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% V
             denom <- (pM * U %*% t(V) )^(Beta - 1) %*% V + L1_U + L2_U * U
+            if(lambda_graph_U > 0 && !is.null(LU)){
+                denom <- denom + lambda_graph_U * LU %*% U
+            }
             U <- U * (numer / denom)^.rho(Beta)
         }
         if(algorithm == "HALS"){
@@ -327,11 +385,24 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
             denom <- U %*% t(V) %*% V + 2 * L2_U * U %*% t(U) %*% U
             U <- U * sqrt(numer / denom)
         }
+        if(algorithm == "t"){
+            Y <- pM * U %*% t(V)
+            Pi <- (2 + nu) / (2 * (pM * X) / Y + nu)
+            numer <- (Pi * (pM * X) / (Y^2)) %*% V
+            denom <- (1/Y) %*% V
+            U <- U * sqrt(numer / denom)
+        }
+        if(algorithm == "TV-GNMF"){
+            numer <- (pM * X) %*% V
+            denom <- (pM * U %*% t(V)) %*% V
+            U <- U * (numer / denom)
+        }
     }
     U
 }
 
-.updateV_NMF <- function(X, pM, U, V, fixV, L1_V, L2_V, J, algorithm, Alpha, Beta, eta, thr2, tol){
+.updateV_NMF <- function(X, pM, U, V, fixV, L1_V, L2_V, J, algorithm, Alpha, Beta, nu, eta, thr2, tol,
+    LV, lambda_graph_V, lambda_TV, beta_TV){
     if(!fixV){
         if(algorithm == "ALS"){
             V <- .positive(t(X) %*% ginv(t(U)))
@@ -349,6 +420,9 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
         if(algorithm == "Beta"){
             numer <- t((pM * U %*% t(V))^(Beta - 2) * (pM * X)) %*% U
             denom <- t((pM * U %*% t(V))^(Beta - 1)) %*% U + L1_V + L2_V * V
+            if(lambda_graph_V > 0 && !is.null(LV)){
+                denom <- denom + lambda_graph_V * LV %*% V
+            }
             V <- V * (numer / denom)^.rho(Beta)
         }
         if(algorithm == "HALS"){
@@ -377,6 +451,31 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
             numer <- t(pX) %*% U
             denom <- V %*% t(U) %*% U
             V <- V * sqrt(numer / denom)
+        }
+        if(algorithm == "t"){
+            Y <- pM * U %*% t(V)
+            Pi <- (2 + nu) / (2 * (pM * X) / Y + nu)
+            numer <- t(Pi * (pM * X) / (Y^2)) %*% U
+            denom <- t(1/Y) %*% U
+            V <- V * sqrt(numer / denom)
+        }
+        if(algorithm == "TV-GNMF"){
+            tv_div <- .tv_divergence(V)
+            numer <- t(pM * X) %*% U
+            denom <- t(pM * U %*% t(V)) %*% U
+            if(lambda_TV > 0){
+                numer <- numer + lambda_TV * tv_div$positive
+                denom <- denom + lambda_TV * tv_div$negative
+            }
+            if(beta_TV > 0 && !is.null(LV)){
+                # L = D - S, where D = diag(rowSums(K)), S = K (weight matrix)
+                # numer gets S %*% V, denom gets D %*% V
+                D_graph <- diag(rowSums(LV + diag(diag(LV))))
+                S_graph <- D_graph - LV
+                numer <- numer + beta_TV * S_graph %*% V
+                denom <- denom + beta_TV * D_graph %*% V
+            }
+            V <- V * (numer / denom)
         }
     }
     V
