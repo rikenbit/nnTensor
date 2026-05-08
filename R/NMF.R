@@ -256,6 +256,9 @@ NMF <- function(X, M=NULL, pseudocount=.Machine$double.eps,
     if(is.null(M)){
         M <- M_NA
     }
+    if(is(M, "Tensor")){
+        M <- M@data
+    }
     pM <- M
     # Pseudo count
     X[which(is.na(X))] <- pseudocount
